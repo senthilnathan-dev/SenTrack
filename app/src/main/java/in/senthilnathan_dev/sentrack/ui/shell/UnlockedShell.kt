@@ -4,26 +4,34 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Work
+import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import `in`.senthilnathan_dev.sentrack.core.data.finance.FinanceRepository
 import `in`.senthilnathan_dev.sentrack.core.ui.AppScreen
+import `in`.senthilnathan_dev.sentrack.core.ui.IconAction
 import `in`.senthilnathan_dev.sentrack.core.ui.Section
 import `in`.senthilnathan_dev.sentrack.feature.finance.FinanceTab
 
-private enum class Tab(val label: String, val glyph: String) {
-    FINANCE("Finance", "₹"),
-    PERSONAL("Personal", "★"),
-    WORK("Work", "▤"),
+private enum class Tab(val label: String, val icon: ImageVector) {
+    FINANCE("Finance", Icons.Filled.AccountBalance),
+    PERSONAL("Personal", Icons.Filled.Favorite),
+    WORK("Work", Icons.Filled.Work),
 }
 
 /**
@@ -34,8 +42,8 @@ private enum class Tab(val label: String, val glyph: String) {
 fun UnlockedShell(finance: FinanceRepository, onLock: () -> Unit, onOpenSettings: () -> Unit) {
     var selected by rememberSaveable { mutableStateOf(Tab.FINANCE) }
     val topActions: @Composable RowScope.() -> Unit = {
-        TextButton(onClick = onOpenSettings) { Text("Settings") }
-        TextButton(onClick = onLock) { Text("Lock") }
+        IconAction(Icons.Filled.Settings, "Settings", onOpenSettings)
+        IconAction(Icons.Filled.Lock, "Lock now", onLock)
     }
 
     Scaffold(
@@ -47,7 +55,7 @@ fun UnlockedShell(finance: FinanceRepository, onLock: () -> Unit, onOpenSettings
                     NavigationBarItem(
                         selected = selected == tab,
                         onClick = { selected = tab },
-                        icon = { Text(tab.glyph) },
+                        icon = { Icon(tab.icon, contentDescription = null) },
                         label = { Text(tab.label) },
                     )
                 }

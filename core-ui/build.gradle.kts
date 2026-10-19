@@ -27,4 +27,6 @@ dependencies {
     api(platform(libs.androidx.compose.bom))
     api(libs.androidx.compose.ui)
     api(libs.androidx.compose.material3)
+    // Material icons (settings, lock, archive, delete...). R8 strips the ones the app does not use in release builds.
+    api(libs.androidx.compose.material.icons.extended)
 }

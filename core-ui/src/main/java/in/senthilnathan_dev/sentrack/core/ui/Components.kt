@@ -25,6 +25,10 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -38,9 +42,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -67,9 +71,7 @@ fun AppScreen(
                 title = { Text(title) },
                 actions = actions,
                 navigationIcon = {
-                    if (onBack != null) {
-                        IconButton(onClick = onBack) { Text("←", modifier = Modifier.semantics { contentDescription = "Back" }, style = MaterialTheme.typography.titleLarge) }
-                    }
+                    if (onBack != null) IconAction(Icons.AutoMirrored.Filled.ArrowBack, "Back", onBack)
                 },
             )
         },
@@ -123,14 +125,31 @@ fun Section(title: String, description: String? = null, content: @Composable Col
     }
 }
 
-/** Title on the left, optional explanation under it, switch on the right. */
+/**
+ * A single-icon button for actions people know at a glance (settings, lock, delete, edit...). The [description]
+ * is what screen readers announce, so it must say what the button does.
+ */
 @Composable
-fun SwitchRow(title: String, subtitle: String? = null, checked: Boolean, enabled: Boolean = true, onChange: (Boolean) -> Unit) {
+fun IconAction(icon: ImageVector, description: String, onClick: () -> Unit, enabled: Boolean = true, tint: Color = Color.Unspecified) {
+    IconButton(onClick = onClick, enabled = enabled) { Icon(icon, contentDescription = description, tint = tint) }
+}
+
+/** Title on the left, optional explanation under it, switch on the right. An [icon] can lead the row. */
+@Composable
+fun SwitchRow(
+    title: String,
+    subtitle: String? = null,
+    checked: Boolean,
+    enabled: Boolean = true,
+    icon: ImageVector? = null,
+    onChange: (Boolean) -> Unit,
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        if (icon != null) Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
         Column(modifier = Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.bodyLarge)
             if (subtitle != null) {
@@ -162,9 +181,9 @@ fun ChoiceRow(label: String, selected: Boolean, subtitle: String? = null, onSele
     }
 }
 
-/** A row that opens another screen. */
+/** A row that opens another screen, with an optional leading [icon] and a chevron on the right. */
 @Composable
-fun NavRow(title: String, subtitle: String? = null, onClick: () -> Unit) {
+fun NavRow(title: String, subtitle: String? = null, onClick: () -> Unit, icon: ImageVector? = null) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -173,13 +192,14 @@ fun NavRow(title: String, subtitle: String? = null, onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        if (icon != null) Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
         Column(modifier = Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.bodyLarge)
             if (subtitle != null) {
                 Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
-        Text("›", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -201,20 +221,29 @@ fun Message(text: String?, kind: MessageKind = MessageKind.INFO) {
 
 /** Full-width main action. While [busy] it shows a spinner and ignores taps. */
 @Composable
-fun PrimaryButton(text: String, onClick: () -> Unit, enabled: Boolean = true, busy: Boolean = false) {
+fun PrimaryButton(text: String, onClick: () -> Unit, enabled: Boolean = true, busy: Boolean = false, icon: ImageVector? = null) {
     Button(onClick = onClick, enabled = enabled && !busy, modifier = Modifier.fillMaxWidth()) {
         if (busy) {
             CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
             Spacer(Modifier.width(12.dp))
+        } else if (icon != null) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
         }
         Text(text)
     }
 }
 
-/** Full-width secondary action. */
+/** Full-width secondary action, with an optional leading [icon]. */
 @Composable
-fun SecondaryButton(text: String, onClick: () -> Unit, enabled: Boolean = true) {
-    OutlinedButton(onClick = onClick, enabled = enabled, modifier = Modifier.fillMaxWidth()) { Text(text) }
+fun SecondaryButton(text: String, onClick: () -> Unit, enabled: Boolean = true, icon: ImageVector? = null) {
+    OutlinedButton(onClick = onClick, enabled = enabled, modifier = Modifier.fillMaxWidth()) {
+        if (icon != null) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+        }
+        Text(text)
+    }
 }
 
 /**

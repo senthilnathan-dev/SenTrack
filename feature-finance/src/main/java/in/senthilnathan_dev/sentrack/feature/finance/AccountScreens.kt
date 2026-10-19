@@ -8,6 +8,11 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Archive
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Unarchive
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -26,6 +31,7 @@ import `in`.senthilnathan_dev.sentrack.core.data.finance.AccountEntity
 import `in`.senthilnathan_dev.sentrack.core.data.finance.AccountKind
 import `in`.senthilnathan_dev.sentrack.core.ui.AppScreen
 import `in`.senthilnathan_dev.sentrack.core.ui.ChoiceRow
+import `in`.senthilnathan_dev.sentrack.core.ui.IconAction
 import `in`.senthilnathan_dev.sentrack.core.ui.Message
 import `in`.senthilnathan_dev.sentrack.core.ui.MessageKind
 import `in`.senthilnathan_dev.sentrack.core.ui.PrimaryButton
@@ -38,6 +44,7 @@ internal fun ColumnScope.AccountsContent(
     summaries: List<AccountSummary>,
     onAdd: () -> Unit,
     onOpen: (String) -> Unit,
+    onOpenArchived: () -> Unit,
 ) {
     val active = summaries.filterNot { it.account.archived }
     val archived = summaries.filter { it.account.archived }
@@ -50,8 +57,45 @@ internal fun ColumnScope.AccountsContent(
         if (liquid.isNotEmpty()) AccountGroup("Spendable money", liquid, FinanceCalculator.liquidPaise(summaries), onOpen)
         if (investments.isNotEmpty()) AccountGroup("Investments", investments, FinanceCalculator.investedNowPaise(summaries), onOpen)
     }
-    PrimaryButton("Add account", onClick = onAdd)
-    if (archived.isNotEmpty()) AccountGroup("Archived", archived, null, onOpen)
+    PrimaryButton("Add account", onClick = onAdd, icon = Icons.Filled.Add)
+    // Archived accounts stay out of sight until asked for.
+    if (archived.isNotEmpty()) SecondaryButton("Archived accounts (${archived.size})", onClick = onOpenArchived, icon = Icons.Filled.Archive)
+}
+
+/** Accounts that were archived: out of totals and pickers, but their history is kept. They can be restored here. */
+@Composable
+internal fun ArchivedAccountsScreen(
+    archived: List<AccountSummary>,
+    onOpen: (String) -> Unit,
+    onRestore: (String) -> Unit,
+    onBack: () -> Unit,
+) {
+    AppScreen("Archived accounts", onBack = onBack) {
+        if (archived.isEmpty()) {
+            Section("Nothing archived", "Archive an account from its page to hide it from your lists and totals without losing its history.") {}
+        } else {
+            Section("Archived", "These are not counted in your net worth. Restore one to bring it back.") {
+                archived.forEachIndexed { index, s ->
+                    if (index > 0) HorizontalDivider()
+                    Row(
+                        modifier = Modifier.fillMaxWidth().clickable { onOpen(s.account.id) },
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(s.account.name, style = MaterialTheme.typography.bodyLarge)
+                            Text(
+                                "${s.account.kind.label} · ${Money.format(s.balancePaise)}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        IconAction(Icons.Filled.Unarchive, "Restore ${s.account.name}", { onRestore(s.account.id) })
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -93,7 +137,6 @@ private fun AccountRow(s: AccountSummary, onClick: () -> Unit) {
 internal fun AccountEditor(
     existing: AccountEntity?,
     onSave: (name: String, kind: AccountKind, openingPaise: Long, note: String?) -> Unit,
-    onToggleArchive: () -> Unit,
     onBack: () -> Unit,
 ) {
     var name by remember { mutableStateOf(existing?.name.orEmpty()) }
@@ -155,11 +198,6 @@ internal fun AccountEditor(
                 opening == null -> error = "Enter the amount as a number, for example 25000 or 1,250.50."
                 else -> onSave(name.trim(), kind, opening, note.ifBlank { null })
             }
-        })
-        if (existing != null) {
-            Section("Archive", "Archived accounts keep their history but are hidden from your totals and pickers. Nothing is deleted.") {
-                SecondaryButton(if (existing.archived) "Restore account" else "Archive account", onClick = onToggleArchive)
-            }
-        }
+        }, icon = Icons.Filled.Check)
     }
 }

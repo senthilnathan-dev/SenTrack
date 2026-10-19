@@ -6,6 +6,11 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CallSplit
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
@@ -28,6 +33,7 @@ import `in`.senthilnathan_dev.sentrack.core.data.finance.CategoryType
 import `in`.senthilnathan_dev.sentrack.core.data.finance.TransactionEntity
 import `in`.senthilnathan_dev.sentrack.core.data.finance.TxType
 import `in`.senthilnathan_dev.sentrack.core.ui.AppScreen
+import `in`.senthilnathan_dev.sentrack.core.ui.IconAction
 import `in`.senthilnathan_dev.sentrack.core.ui.Message
 import `in`.senthilnathan_dev.sentrack.core.ui.MessageKind
 import `in`.senthilnathan_dev.sentrack.core.ui.PrimaryButton
@@ -118,7 +124,11 @@ internal fun EntryScreen(
     val received = Money.parse(amountText)
     val principal = if (withdrawAll) availablePrincipal else Money.parse(principalText)
 
-    AppScreen(if (existing == null) "Add entry" else "Edit entry", onBack = onBack) {
+    AppScreen(
+        if (existing == null) "Add entry" else "Edit entry",
+        onBack = onBack,
+        actions = { if (onDelete != null) IconAction(Icons.Filled.Delete, "Delete this entry", { confirmDelete = true }) },
+    ) {
         Section("Type") {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf(TxType.EXPENSE, TxType.INCOME, TxType.TRANSFER, TxType.INVEST, TxType.WITHDRAW).forEach { t ->
@@ -268,14 +278,9 @@ internal fun EntryScreen(
             )
         }
 
-        PrimaryButton("Save", onClick = { build()?.let { onSave(it, false) } })
+        PrimaryButton("Save", onClick = { build()?.let { onSave(it, false) } }, icon = Icons.Filled.Check)
         if (type == TxType.INCOME && existing == null) {
-            SecondaryButton("Save and split into investments", onClick = { build()?.let { onSave(it, true) } })
-        }
-        if (onDelete != null) {
-            Section("Delete") {
-                SecondaryButton("Delete this entry", onClick = { confirmDelete = true })
-            }
+            SecondaryButton("Save and split into investments", onClick = { build()?.let { onSave(it, true) } }, icon = Icons.Filled.CallSplit)
         }
     }
 
@@ -374,10 +379,10 @@ internal fun SplitScreen(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         modifier = Modifier.weight(1f),
                     )
-                    if (rows.size > 1) TextButton(onClick = { rows.removeAt(index) }) { Text("Remove") }
+                    if (rows.size > 1) IconAction(Icons.Filled.Delete, "Remove destination ${index + 1}", { rows.removeAt(index) })
                 }
             }
-            SecondaryButton("Add another destination", onClick = { rows.add(SplitRow(null, "")) })
+            SecondaryButton("Add another destination", onClick = { rows.add(SplitRow(null, "")) }, icon = Icons.Filled.Add)
         }
 
         Section("Summary") {
@@ -391,7 +396,7 @@ internal fun SplitScreen(
         }
 
         Message(error, MessageKind.ERROR)
-        PrimaryButton("Save split", onClick = {
+        PrimaryButton("Save split", icon = Icons.Filled.Check, onClick = {
             val source = fromId
             val filled = rows.filter { it.destId != null || it.amount.isNotBlank() }
             val parsed = filled.map { it.destId to Money.parse(it.amount) }

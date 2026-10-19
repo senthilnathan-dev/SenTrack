@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CallSplit
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -81,7 +84,7 @@ internal fun ColumnScope.DashboardContent(
             "Welcome to Finance",
             "Start by adding the places your money sits: a bank account, cash, a wallet, PF, and each mutual fund, gold holding, FD or RD. Then record entries and this page fills in.",
         ) {
-            PrimaryButton("Add your first account", onClick = onAddAccount)
+            PrimaryButton("Add your first account", onClick = onAddAccount, icon = Icons.Filled.Add)
         }
         return
     }
@@ -226,7 +229,7 @@ internal fun ColumnScope.DashboardContent(
             Money.formatSigned(fySummary.realisedGainPaise),
             if (fySummary.realisedGainPaise > 0) good else if (fySummary.realisedGainPaise < 0) bad else null,
         )
-        SecondaryButton("Split money across investments", onClick = onSplit)
+        SecondaryButton("Split money across investments", onClick = onSplit, icon = Icons.Filled.CallSplit)
     }
 
     // ---- Financial year

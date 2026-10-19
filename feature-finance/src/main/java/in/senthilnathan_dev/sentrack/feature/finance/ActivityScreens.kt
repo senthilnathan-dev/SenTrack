@@ -9,6 +9,12 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Archive
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Unarchive
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -32,6 +38,7 @@ import `in`.senthilnathan_dev.sentrack.core.data.finance.CategoryType
 import `in`.senthilnathan_dev.sentrack.core.data.finance.TransactionEntity
 import `in`.senthilnathan_dev.sentrack.core.data.finance.TxType
 import `in`.senthilnathan_dev.sentrack.core.ui.AppScreen
+import `in`.senthilnathan_dev.sentrack.core.ui.IconAction
 import `in`.senthilnathan_dev.sentrack.core.ui.Message
 import `in`.senthilnathan_dev.sentrack.core.ui.MessageKind
 import `in`.senthilnathan_dev.sentrack.core.ui.PrimaryButton
@@ -158,12 +165,25 @@ internal fun AccountDetailScreen(
     categories: Map<String, CategoryEntity>,
     onAddEntry: () -> Unit,
     onEdit: () -> Unit,
+    onToggleArchive: () -> Unit,
     onOpenTx: (String) -> Unit,
     onBack: () -> Unit,
 ) {
     val a = summary.account
     val mine = transactions.filter { it.accountId == a.id || it.toAccountId == a.id }
-    AppScreen(a.name, onBack = onBack) {
+    var confirmArchive by remember { mutableStateOf(false) }
+    AppScreen(
+        a.name,
+        onBack = onBack,
+        actions = {
+            IconAction(Icons.Filled.Edit, "Edit account", onEdit)
+            IconAction(
+                if (a.archived) Icons.Filled.Unarchive else Icons.Filled.Archive,
+                if (a.archived) "Restore account" else "Archive account",
+                { if (a.archived) onToggleArchive() else confirmArchive = true },
+            )
+        },
+    ) {
         Section(a.kind.label) {
             if (a.kind.isInvestment) {
                 Text(Money.format(summary.balancePaise), style = MaterialTheme.typography.headlineMedium)
@@ -182,13 +202,26 @@ internal fun AccountDetailScreen(
             }
             a.note?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
         }
-        PrimaryButton("Add entry for this account", onClick = onAddEntry)
-        SecondaryButton("Edit account", onClick = onEdit)
+        if (a.archived) {
+            Message("This account is archived. It is not counted in your totals. Use the restore icon above to bring it back.", MessageKind.INFO)
+        } else {
+            PrimaryButton("Add entry for this account", onClick = onAddEntry, icon = Icons.Filled.Add)
+        }
         if (mine.isEmpty()) {
             Section("Entries", "No entries yet.") {}
         } else {
             TxGroups(mine, accounts, categories, onOpenTx)
         }
+    }
+
+    if (confirmArchive) {
+        AlertDialog(
+            onDismissRequest = { confirmArchive = false },
+            title = { Text("Archive ${a.name}?") },
+            text = { Text("It disappears from your lists, pickers and net worth, but its history is kept. You can restore it any time from Archived accounts.") },
+            confirmButton = { TextButton(onClick = { confirmArchive = false; onToggleArchive() }) { Text("Archive") } },
+            dismissButton = { TextButton(onClick = { confirmArchive = false }) { Text("Cancel") } },
+        )
     }
 }
 
@@ -200,7 +233,10 @@ internal fun StatRow(label: String, value: String, color: Color? = null) {
     }
 }
 
-/** Add, rename or archive categories. */
+/**
+ * Add or archive categories. Archived categories are hidden by default; the archive icon in the top bar switches to
+ * that list, where they can be restored.
+ */
 @Composable
 internal fun CategoriesScreen(
     categories: List<CategoryEntity>,
@@ -211,8 +247,31 @@ internal fun CategoriesScreen(
     var newName by remember { mutableStateOf("") }
     var newType by remember { mutableStateOf(CategoryType.EXPENSE) }
     var error by remember { mutableStateOf<String?>(null) }
+    var showArchived by remember { mutableStateOf(false) }
+    val archivedCount = categories.count { it.archived }
 
-    AppScreen("Categories", onBack = onBack) {
+    AppScreen(
+        if (showArchived) "Archived categories" else "Categories",
+        onBack = { if (showArchived) showArchived = false else onBack() },
+        actions = {
+            if (!showArchived && archivedCount > 0) IconAction(Icons.Filled.Archive, "Show archived categories ($archivedCount)", { showArchived = true })
+        },
+    ) {
+        if (showArchived) {
+            Section("Archived", "Past entries keep these categories. Restore one to use it again.") {
+                val archived = categories.filter { it.archived }
+                if (archived.isEmpty()) Text("Nothing archived.")
+                archived.forEachIndexed { i, c ->
+                    if (i > 0) HorizontalDivider()
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text("${c.name} (${if (c.type == CategoryType.INCOME) "income" else "expense"})", modifier = Modifier.weight(1f))
+                        IconAction(Icons.Filled.Unarchive, "Restore ${c.name}", { onToggleArchive(c) })
+                    }
+                }
+            }
+            return@AppScreen
+        }
+
         Section("Add a category") {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(selected = newType == CategoryType.EXPENSE, onClick = { newType = CategoryType.EXPENSE }, label = { Text("Expense") })
@@ -226,7 +285,7 @@ internal fun CategoriesScreen(
                 modifier = Modifier.fillMaxWidth(),
             )
             Message(error, MessageKind.ERROR)
-            PrimaryButton("Add", onClick = {
+            PrimaryButton("Add", icon = Icons.Filled.Add, onClick = {
                 val name = newName.trim()
                 when {
                     name.isEmpty() -> error = "Enter a name."
@@ -236,16 +295,12 @@ internal fun CategoriesScreen(
             })
         }
         listOf(CategoryType.EXPENSE to "Expense categories", CategoryType.INCOME to "Income categories").forEach { (type, title) ->
-            Section(title, "Archiving hides a category from pickers; past entries keep it.") {
-                categories.filter { it.type == type }.forEachIndexed { i, c ->
+            Section(title) {
+                categories.filter { it.type == type && !it.archived }.forEachIndexed { i, c ->
                     if (i > 0) HorizontalDivider()
                     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            c.name + if (c.archived) " (archived)" else "",
-                            modifier = Modifier.weight(1f),
-                            color = if (c.archived) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
-                        )
-                        TextButton(onClick = { onToggleArchive(c) }) { Text(if (c.archived) "Restore" else "Archive") }
+                        Text(c.name, modifier = Modifier.weight(1f))
+                        IconAction(Icons.Filled.Archive, "Archive ${c.name}", { onToggleArchive(c) })
                     }
                 }
             }

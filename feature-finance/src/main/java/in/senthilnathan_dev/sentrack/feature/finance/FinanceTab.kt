@@ -6,7 +6,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Category
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,6 +37,7 @@ internal sealed interface FinanceRoute {
     data object NewAccount : FinanceRoute
     data class EditAccount(val id: String) : FinanceRoute
     data class AccountDetail(val id: String) : FinanceRoute
+    data object ArchivedAccounts : FinanceRoute
     data class Entry(val txId: String?, val type: TxType = TxType.EXPENSE, val accountId: String? = null) : FinanceRoute
     data class Split(val fromId: String?) : FinanceRoute
     data object Categories : FinanceRoute
@@ -73,7 +78,11 @@ fun FinanceTab(repo: FinanceRepository, topActions: @Composable RowScope.() -> U
             "Finance",
             actions = topActions,
             floatingActionButton = {
-                ExtendedFloatingActionButton(onClick = { open(FinanceRoute.Entry(null)) }) { Text("+ Add entry") }
+                ExtendedFloatingActionButton(
+                    onClick = { open(FinanceRoute.Entry(null)) },
+                    icon = { Icon(Icons.Filled.Add, contentDescription = null) },
+                    text = { Text("Add entry") },
+                )
             },
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -94,8 +103,9 @@ fun FinanceTab(repo: FinanceRepository, topActions: @Composable RowScope.() -> U
                         summaries = summaries,
                         onAdd = { open(FinanceRoute.NewAccount) },
                         onOpen = { open(FinanceRoute.AccountDetail(it)) },
+                        onOpenArchived = { open(FinanceRoute.ArchivedAccounts) },
                     )
-                    SecondaryButton("Manage categories", onClick = { open(FinanceRoute.Categories) })
+                    SecondaryButton("Manage categories", onClick = { open(FinanceRoute.Categories) }, icon = Icons.Filled.Category)
                 }
                 FinanceSection.ACTIVITY -> ActivityContent(
                     transactions = transactions,
@@ -112,7 +122,6 @@ fun FinanceTab(repo: FinanceRepository, topActions: @Composable RowScope.() -> U
             onSave = { name, kind, opening, note ->
                 scope.launch { repo.addAccount(name, kind, opening, note); back() }
             },
-            onToggleArchive = {},
             onBack = ::back,
         )
 
@@ -126,10 +135,16 @@ fun FinanceTab(repo: FinanceRepository, topActions: @Composable RowScope.() -> U
                         back()
                     }
                 },
-                onToggleArchive = { scope.launch { repo.setAccountArchived(account.id, !account.archived); home() } },
                 onBack = ::back,
             )
         }
+
+        FinanceRoute.ArchivedAccounts -> ArchivedAccountsScreen(
+            archived = summaries.filter { it.account.archived },
+            onOpen = { open(FinanceRoute.AccountDetail(it)) },
+            onRestore = { id -> scope.launch { repo.setAccountArchived(id, false) } },
+            onBack = ::back,
+        )
 
         is FinanceRoute.AccountDetail -> {
             val summary = summaries.firstOrNull { it.account.id == route.id }
@@ -142,6 +157,7 @@ fun FinanceTab(repo: FinanceRepository, topActions: @Composable RowScope.() -> U
                     open(FinanceRoute.Entry(null, if (summary.account.kind.isInvestment) TxType.INVEST else TxType.EXPENSE, summary.account.id))
                 },
                 onEdit = { open(FinanceRoute.EditAccount(summary.account.id)) },
+                onToggleArchive = { scope.launch { repo.setAccountArchived(summary.account.id, !summary.account.archived); home() } },
                 onOpenTx = { open(FinanceRoute.Entry(it)) },
                 onBack = ::back,
             )
