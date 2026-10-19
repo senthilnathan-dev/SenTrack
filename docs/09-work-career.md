@@ -17,6 +17,22 @@ four sections: **Learning | Certificates | Job hunt | Resumes**.
 Archive-not-delete everywhere (an "Archived (n)" button reveals them); permanent deletion needs the word DELETE typed.
 
 Pure logic (`CareerMath`, `JobStatus`) is unit-tested. Not yet built: the workspace of apps/sites with usage tracking and
-onboarding/offboarding checklists, job-hunt statistics, learning reminders.
+job-hunt statistics, learning reminders.
 
 Migration: versions 9 and 10 were never built, so the chain is `8 -> 11`.
+
+## Workspace (schema v12)
+
+The fifth Career section lists the apps and websites you use for work. Each belongs to a company or to "Personal".
+
+* **Launching**: tapping an item opens the app (or the site in the browser) and SenTrack counts the launch and when;
+  the list is ordered by use. SenTrack only knows opens made from its own list, which is the "usage tracking" it can do
+  honestly without the intrusive usage-access permission. The app grace period (`beginExternalFlow`) stops the vault
+  locking while you are away on purpose.
+* **Choosing an app**: the picker lists apps with a launcher icon, using a `<queries>` entry in the manifest instead of the
+  Play-restricted `QUERY_ALL_PACKAGES` permission.
+* **Notes** carry hints like which login to use. Never store passwords there.
+* **Checklists**: per company, a *Joining* and a *Leaving* list, seeded from a suggested template you can edit. The
+  leaving page also lists the company's workspace items so you can archive them in one go.
+
+Migration: versions 9 to 11 were never built, so the chain is `8 -> 12`.
