@@ -27,4 +27,5 @@ files, swaps them in, and rolls back if any step fails.
 
 ## Status
 - Done: snapshot engine, cron parser, vault header export, Drive REST client (fake-server tests), Google authorizer, backup manager, Backup screen (connect, back up now, list, restore, retention, passphrase-slot setting)
-- Next: WorkManager scheduling (cron, network policy, charging), schedule screen, failure notifications (Phase 7)
+- Done: account chooser (shows and pins the Google account, switch, disconnect), WorkManager scheduling (one delayed job to the next cron time, re-queued after each run; network policy and charging as constraints; 2 retries with back-off)
+- Next: failure notifications (Phase 7), schedule in-app timeline of past runs

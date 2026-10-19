@@ -1,5 +1,6 @@
 package `in`.senthilnathan_dev.sentrack.backup
 
+import android.accounts.Account
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
@@ -10,17 +11,22 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
 /**
- * Gets short-lived Google Drive access tokens for the hidden app folder (scope `drive.appdata`).
+ * Gets short-lived Google Drive access tokens for the hidden app folder (scope `drive.appdata`) for the account
+ * the user chose in [BackupSettings.accountEmail].
  *
  * Uses Google's Authorization API: the first time the user must approve once (a Google screen); afterwards tokens
  * are issued silently, which is what lets scheduled backups run in the background. SenTrack never sees the
  * user's Google password and keeps no long-lived token.
  */
-class DriveAuthorizer(context: Context) {
+class DriveAuthorizer(context: Context, private val settings: BackupSettings) {
     private val client = Identity.getAuthorizationClient(context)
-    private val request = AuthorizationRequest.builder()
-        .setRequestedScopes(listOf(Scope(DRIVE_APPDATA_SCOPE)))
-        .build()
+
+    private fun request(): AuthorizationRequest {
+        val builder = AuthorizationRequest.builder().setRequestedScopes(listOf(Scope(DRIVE_APPDATA_SCOPE)))
+        // Pin the request to the chosen account so backups never silently use a different one.
+        settings.accountEmail?.let { builder.setAccount(Account(it, GOOGLE_ACCOUNT_TYPE)) }
+        return builder.build()
+    }
 
     sealed interface Result {
         data class Ready(val accessToken: String) : Result
@@ -31,7 +37,7 @@ class DriveAuthorizer(context: Context) {
     }
 
     suspend fun authorize(): Result = suspendCancellableCoroutine { cont ->
-        client.authorize(request)
+        client.authorize(request())
             .addOnSuccessListener { res ->
                 val token = res.accessToken
                 val pending = res.pendingIntent
@@ -52,5 +58,6 @@ class DriveAuthorizer(context: Context) {
 
     companion object {
         const val DRIVE_APPDATA_SCOPE = "https://www.googleapis.com/auth/drive.appdata"
+        const val GOOGLE_ACCOUNT_TYPE = "com.google"
     }
 }

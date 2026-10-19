@@ -15,6 +15,11 @@ class BackupSettings(context: Context) {
         get() = prefs.getBoolean("connected", false)
         set(v) = prefs.edit().putBoolean("connected", v).apply()
 
+    /** The Google account chosen for backups (shown to the user; used to request tokens for that account). */
+    var accountEmail: String?
+        get() = prefs.getString("account_email", null)
+        set(v) = prefs.edit().putString("account_email", v).apply()
+
     /** Whether scheduled backups run. */
     var scheduleEnabled: Boolean
         get() = prefs.getBoolean("schedule_enabled", false)

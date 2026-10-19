@@ -13,5 +13,7 @@ class SenTrackApp : Application() {
         super.onCreate()
         container = AppContainer(this)
         AutoLocker(this, container).install()
+        // Make sure a next scheduled backup is queued (KEEP: never disturbs one that is already waiting or running).
+        container.backupScheduler.reschedule(androidx.work.ExistingWorkPolicy.KEEP)
     }
 }

@@ -1,5 +1,6 @@
 package `in`.senthilnathan_dev.sentrack
 
+import android.accounts.AccountManager
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.compose.BackHandler
@@ -16,6 +17,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.fragment.app.FragmentActivity
+import `in`.senthilnathan_dev.sentrack.backup.BackupActions
 import `in`.senthilnathan_dev.sentrack.backup.BackupScreen
 import `in`.senthilnathan_dev.sentrack.backup.BackupViewModel
 import `in`.senthilnathan_dev.sentrack.ui.theme.SenTrackTheme
@@ -40,6 +42,20 @@ class MainActivity : FragmentActivity() {
     /** Google's one-time "allow SenTrack to use its Drive app folder" screen. */
     private val driveConsent = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
         backupViewModel.onConsentResult(result.data)
+    }
+
+    /** Android's own Google-account chooser; returns the chosen account's address. */
+    private val accountPicker = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val name = result.data?.getStringExtra(AccountManager.KEY_ACCOUNT_NAME)
+        backupViewModel.onAccountChosen(name) { pending ->
+            driveConsent.launch(IntentSenderRequest.Builder(pending).build())
+        }
+    }
+
+    private fun chooseGoogleAccount() {
+        @Suppress("DEPRECATION")
+        val intent = AccountManager.newChooseAccountIntent(null, null, arrayOf("com.google"), null, null, null, null)
+        accountPicker.launch(intent)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -92,18 +108,21 @@ class MainActivity : FragmentActivity() {
                             val backupState by backupViewModel.state.collectAsState()
                             BackupScreen(
                                 state = backupState,
-                                onConnect = {
-                                    backupViewModel.connect { pending ->
-                                        driveConsent.launch(IntentSenderRequest.Builder(pending).build())
-                                    }
-                                },
-                                onBackupNow = backupViewModel::backupNow,
-                                onSetRetention = backupViewModel::setRetention,
-                                onSetIncludePassphrase = backupViewModel::setIncludePassphraseSlot,
-                                onAskRestore = backupViewModel::askRestore,
-                                onCancelRestore = backupViewModel::cancelRestore,
-                                onConfirmRestore = { backupViewModel.confirmRestore(vaultViewModel::afterRestore) },
-                                onBack = vaultViewModel::closeBackup,
+                                actions = BackupActions(
+                                    onChooseAccount = this@MainActivity::chooseGoogleAccount,
+                                    onDisconnect = backupViewModel::disconnect,
+                                    onBackupNow = backupViewModel::backupNow,
+                                    onSetRetention = backupViewModel::setRetention,
+                                    onSetIncludePassphrase = backupViewModel::setIncludePassphraseSlot,
+                                    onSetScheduleEnabled = backupViewModel::setScheduleEnabled,
+                                    onSetCron = backupViewModel::setCron,
+                                    onSetNetwork = backupViewModel::setNetwork,
+                                    onSetRequireCharging = backupViewModel::setRequireCharging,
+                                    onAskRestore = backupViewModel::askRestore,
+                                    onCancelRestore = backupViewModel::cancelRestore,
+                                    onConfirmRestore = { backupViewModel.confirmRestore(vaultViewModel::afterRestore) },
+                                    onBack = vaultViewModel::closeBackup,
+                                ),
                             )
                         }
                     }
