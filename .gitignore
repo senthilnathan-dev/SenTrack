@@ -29,3 +29,6 @@ keystore.properties
 
 # Build output in every module
 build/
+
+# IDE settings
+.idea/
