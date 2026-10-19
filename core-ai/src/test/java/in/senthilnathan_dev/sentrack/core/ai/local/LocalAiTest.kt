@@ -2,7 +2,7 @@ package `in`.senthilnathan_dev.sentrack.core.ai.local
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -75,11 +75,6 @@ class LocalAiTest {
         assertEquals(0.0, result(chars = 100, ms = 0).tokensPerSecond, 0.0)
     }
 
-    @Test
-    fun catalog_recognisesFileNames() {
-        assertNotNull(LocalModels.byFileName("GEMMA3-1B-IT-INT4.LITERTLM"))
-        assertEquals(null, LocalModels.byFileName("something-else.bin"))
-    }
 }
 
 class StreamAccumulatorTest {
@@ -96,5 +91,47 @@ class StreamAccumulatorTest {
         listOf("Hel", "Hello", "Hello world").forEach(a::add)
         assertEquals("Hello world", a.value)
         assertEquals(11, a.length)
+    }
+}
+
+class SetupPlannerTest {
+    private fun phone(ram: Long, storage: Long, lowRam: Boolean = false) =
+        DeviceProfile(ram, ram / 2, storage, listOf("arm64-v8a"), 36, lowRam, 0)
+
+    @Test
+    fun recommend_bigModelOnlyWhenThePhoneCanHoldIt() {
+        assertEquals(LocalModels.BEST, SetupPlanner.recommend(phone(8000, 30_000)))
+        assertEquals(LocalModels.FAST, SetupPlanner.recommend(phone(4500, 30_000)))      // too little RAM
+        assertEquals(LocalModels.FAST, SetupPlanner.recommend(phone(8000, 3_000)))       // too little storage
+        assertEquals(LocalModels.FAST, SetupPlanner.recommend(phone(8000, 30_000, lowRam = true)))
+    }
+
+    @Test
+    fun fallback_walksDownToTheSmallest() {
+        assertEquals(LocalModels.FAST, SetupPlanner.fallbackFor(LocalModels.BEST))
+        assertNull(SetupPlanner.fallbackFor(LocalModels.FAST))
+    }
+
+    @Test
+    fun catalog_entriesAreComplete() {
+        LocalModels.catalog.forEach {
+            assertTrue(it.url.startsWith("https://"))
+            assertTrue(it.fileName.endsWith(".litertlm"))
+            assertEquals(64, it.sha256.length)
+            assertTrue(it.sizeBytes > 100_000_000L)
+        }
+        assertEquals(LocalModels.BEST, LocalModels.byId("gemma4-e2b"))
+        assertEquals(LocalModels.FAST, LocalModels.byFileName("QWEN3_0.6B_NOTHINK_Q4_BLOCK32_EKV1280.LITERTLM"))
+    }
+
+    @Test
+    fun downloadMath() {
+        assertNull(DownloadMath.rangeHeader(0))
+        assertEquals("bytes=500-", DownloadMath.rangeHeader(500))
+        assertEquals(1000L, DownloadMath.totalFromContentRange("bytes 100-999/1000"))
+        assertNull(DownloadMath.totalFromContentRange("bytes 100-999/*"))
+        assertNull(DownloadMath.totalFromContentRange(null))
+        assertEquals(0.5f, DownloadMath.fraction(50, 100)!!, 0.0001f)
+        assertNull(DownloadMath.fraction(5, 0))
     }
 }

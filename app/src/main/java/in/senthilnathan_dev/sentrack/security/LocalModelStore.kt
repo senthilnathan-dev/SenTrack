@@ -2,74 +2,55 @@ package `in`.senthilnathan_dev.sentrack.security
 
 import android.app.ActivityManager
 import android.content.Context
-import android.net.Uri
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.os.Build
 import android.os.PowerManager
 import android.os.StatFs
-import android.provider.OpenableColumns
 import `in`.senthilnathan_dev.sentrack.core.ai.local.DeviceProfile
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import `in`.senthilnathan_dev.sentrack.core.ai.local.LocalModels
+import `in`.senthilnathan_dev.sentrack.core.ai.local.ModelOption
 import java.io.File
-import java.io.IOException
 
 /**
- * Where the on-device model file lives: the app's private storage, `files/models`. The file is a public open model,
- * not personal data, so it is not put through the encrypted vault (which would slow every load for no gain).
- * It is excluded from backups simply because it is large and can be fetched again.
+ * Where the on-device model lives: the app's private storage, `files/models`. The model is a public open model, not
+ * personal data, so it is not put through the encrypted vault (which would slow every load for no gain). It lives
+ * outside the backup, simply because it is large and can be fetched again.
  */
 class LocalModelStore(context: Context) {
     private val context = context.applicationContext
-    private val dir = File(this.context.filesDir, "models")
+    val dir = File(this.context.filesDir, "models")
 
-    /** The imported model, if any. */
+    /** The downloaded, verified model file, if any (a half-finished `.part` download does not count). */
     fun modelFile(): File? = dir.listFiles { f -> f.isFile && f.name.endsWith(".litertlm") }?.firstOrNull()
 
-    /**
-     * Copies the chosen `.litertlm` file into private storage, replacing any earlier model, and returns it.
-     * [onProgress] gets bytes copied so far. @throws IOException for a wrong file type or an unreadable file.
-     */
-    suspend fun import(uri: Uri, onProgress: (Long) -> Unit): File = withContext(Dispatchers.IO) {
-        val name = displayName(uri) ?: throw IOException("Could not read the file name")
-        if (!name.endsWith(".litertlm", ignoreCase = true)) {
-            throw IOException("Choose a .litertlm model file. This one is called $name.")
-        }
-        dir.mkdirs()
-        val temp = File(dir, "$name.part")
-        try {
-            context.contentResolver.openInputStream(uri)?.use { input ->
-                temp.outputStream().use { out ->
-                    val buffer = ByteArray(256 * 1024)
-                    var total = 0L
-                    while (true) {
-                        val n = input.read(buffer)
-                        if (n < 0) break
-                        out.write(buffer, 0, n)
-                        total += n
-                        onProgress(total)
-                    }
-                }
-            } ?: throw IOException("Could not open the file")
-            delete()                                   // remove the previous model only once the new one has copied fully
-            val target = File(dir, name)
-            if (!temp.renameTo(target)) throw IOException("Could not store the model")
-            target
-        } finally {
-            temp.delete()
-        }
-    }
+    /** Which catalog entry the stored file is, if it is one we know. */
+    fun installedOption(): ModelOption? = modelFile()?.let { LocalModels.byFileName(it.name) }
 
+    /** Bytes of an interrupted download of [option], so the screen can offer Resume. */
+    fun partialBytes(option: ModelOption): Long = File(dir, option.fileName + ".part").length()
+
+    /** Removes the model and any partial download. */
     fun delete() {
         dir.listFiles()?.forEach { it.delete() }
     }
 
-    private fun displayName(uri: Uri): String? =
-        context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c ->
-            if (c.moveToFirst()) c.getString(0) else null
-        }
+    /** True when the current connection is metered (mobile data or a capped hotspot). */
+    fun isMetered(): Boolean {
+        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val caps = cm.getNetworkCapabilities(cm.activeNetwork) ?: return true
+        return !caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
+    }
+
+    fun isOnline(): Boolean {
+        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val caps = cm.getNetworkCapabilities(cm.activeNetwork) ?: return false
+        return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+    }
 
     /** Reads what the phone says about itself, for the compatibility checks. */
     fun readDeviceProfile(): DeviceProfile {
+        dir.mkdirs()
         val am = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
         val info = ActivityManager.MemoryInfo().also { am.getMemoryInfo(it) }
         val stat = StatFs(context.filesDir.path)

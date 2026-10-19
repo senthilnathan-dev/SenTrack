@@ -69,6 +69,7 @@ class AppContainer(app: Application) {
     val career = CareerRepository(database)
     val ai = AiSettingsStore(database)
     val localModels = LocalModelStore(app)
+    val localSetup = LocalAiSetup(localModels, ai, appScope)
 
     /** Encrypted attachment store. Lives in `noBackupFilesDir`, like the vault header. */
     val files = FileVault(File(app.noBackupFilesDir, "vault_files"), session)
