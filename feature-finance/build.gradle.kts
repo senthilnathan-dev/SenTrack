@@ -26,6 +26,7 @@ dependencies {
     implementation(project(":core-ui"))
     implementation(project(":core-data"))
     implementation(project(":core-security"))
+    implementation(project(":core-attachments"))
     implementation(libs.androidx.activity.compose)
     testImplementation(libs.junit)
 }

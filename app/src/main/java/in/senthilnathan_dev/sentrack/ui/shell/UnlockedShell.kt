@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import `in`.senthilnathan_dev.sentrack.core.alerts.ReminderCenter
 import `in`.senthilnathan_dev.sentrack.core.alerts.ReminderRepository
 import `in`.senthilnathan_dev.sentrack.core.data.finance.FinanceRepository
+import `in`.senthilnathan_dev.sentrack.core.data.personal.NoteRepository
 import `in`.senthilnathan_dev.sentrack.core.security.vault.FileVault
 import `in`.senthilnathan_dev.sentrack.core.ui.AppScreen
 import `in`.senthilnathan_dev.sentrack.core.ui.IconAction
@@ -36,6 +37,7 @@ import `in`.senthilnathan_dev.sentrack.core.ui.LocalBottomInsetHandled
 import `in`.senthilnathan_dev.sentrack.core.ui.LocalExternalFlowStarter
 import `in`.senthilnathan_dev.sentrack.core.ui.Section
 import `in`.senthilnathan_dev.sentrack.feature.finance.FinanceTab
+import `in`.senthilnathan_dev.sentrack.feature.personal.PersonalTab
 import `in`.senthilnathan_dev.sentrack.feature.reminders.RemindersScreen
 
 private enum class Tab(val label: String, val icon: ImageVector) {
@@ -53,6 +55,7 @@ private enum class Tab(val label: String, val icon: ImageVector) {
 fun UnlockedShell(
     finance: FinanceRepository,
     files: FileVault,
+    notes: NoteRepository,
     reminders: ReminderRepository,
     reminderCenter: ReminderCenter,
     onLock: () -> Unit,
@@ -95,10 +98,7 @@ fun UnlockedShell(
                 }
                 when (selected) {
                     Tab.FINANCE -> FinanceTab(finance, files, topActions)
-                    Tab.PERSONAL -> ComingSoon(
-                        "Personal", topActions,
-                        "Notes, habits, goals and bucket list, achievements, important dates and reminders.",
-                    )
+                    Tab.PERSONAL -> PersonalTab(notes, files, topActions)
                     Tab.WORK -> ComingSoon(
                         "Work", topActions,
                         "Punch in and out, leave calendar, tasks and appreciation, plus career tracking and your workspace of apps and sites.",

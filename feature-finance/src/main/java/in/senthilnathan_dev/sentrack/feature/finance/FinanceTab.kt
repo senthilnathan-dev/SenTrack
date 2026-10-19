@@ -37,6 +37,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import `in`.senthilnathan_dev.sentrack.core.attachments.AttachmentService
+import `in`.senthilnathan_dev.sentrack.core.attachments.AttachmentViewerScreen
 import `in`.senthilnathan_dev.sentrack.core.data.finance.FinanceRepository
 import `in`.senthilnathan_dev.sentrack.core.data.finance.TaxDocCategory
 import `in`.senthilnathan_dev.sentrack.core.data.finance.TaxDocumentEntity
@@ -106,7 +108,8 @@ fun FinanceTab(repo: FinanceRepository, files: FileVault, topActions: @Composabl
 
     // ---- Tax documents: import from the phone, save a readable copy, with progress and result messages.
     val context = LocalContext.current.applicationContext
-    val taxService = remember(repo, files) { TaxDocumentService(context, repo, files) }
+    val attachments = remember(files) { AttachmentService(context, files) }
+    val taxService = remember(repo, attachments) { TaxDocumentService(repo, attachments) }
     val beginExternalFlow = LocalExternalFlowStarter.current   // keeps auto-lock from firing while the system picker is open
     var importing by remember { mutableStateOf(false) }
     var taxNotice by remember { mutableStateOf<String?>(null) }
@@ -354,9 +357,11 @@ fun FinanceTab(repo: FinanceRepository, files: FileVault, topActions: @Composabl
 
         is FinanceRoute.Viewer -> {
             val doc = taxDocuments.firstOrNull { it.id == route.docId }
-            if (doc == null) back() else DocumentViewerScreen(
-                doc = doc,
-                service = taxService,
+            if (doc == null) back() else AttachmentViewerScreen(
+                name = doc.name,
+                mimeType = doc.mimeType,
+                vaultFileId = doc.vaultFileId,
+                service = attachments,
                 files = files,
                 onExport = { exportingDoc = doc; beginExternalFlow(); exporter.launch(doc.name) },
                 onBack = ::back,
