@@ -40,7 +40,19 @@ class DatabaseHolder(private val context: Context, private val session: VaultSes
         database = null
     }
 
-    private companion object {
+    /**
+     * Runs [block] while the database is closed (closing flushes the write-ahead log into the main file), so
+     * the file can be copied consistently. Other callers of [get] wait until [block] finishes, and the next
+     * [get] reopens the database on demand.
+     */
+    @Synchronized
+    fun runQuiesced(block: () -> Unit) {
+        close()
+        block()
+    }
+
+    companion object {
+        /** File name inside the app's `databases` folder. */
         const val DB_NAME = "sentrack.db"
     }
 }

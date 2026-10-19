@@ -19,7 +19,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /** Which vault screen is showing. */
-enum class Stage { SETUP, SHOW_RECOVERY, LOCKED, RECOVER, UNLOCKED, SETTINGS, CHANGE_PASSPHRASE }
+enum class Stage { SETUP, SHOW_RECOVERY, LOCKED, RECOVER, UNLOCKED, SETTINGS, CHANGE_PASSPHRASE, BACKUP }
 
 data class VaultUiState(
     val stage: Stage,
@@ -28,6 +28,8 @@ data class VaultUiState(
     /** One-off success message (e.g. "Passphrase changed"). */
     val info: String? = null,
     val autoLockSeconds: Int = SecuritySettings.DEFAULT_AUTO_LOCK_SECONDS,
+    /** True after restoring a recovery-only backup: only the recovery code can open the vault. */
+    val passphraseSlotMissing: Boolean = false,
     val recoveryCode: String? = null,
     val biometricAvailable: Boolean = false,
     val biometricEnabled: Boolean = false,
@@ -49,7 +51,7 @@ class VaultViewModel(app: Application) : AndroidViewModel(app) {
     private var blockedUntil = 0L
 
     private val lockListener: (Boolean) -> Unit = { unlocked ->
-        if (!unlocked) {
+        if (!unlocked && !container.restoring) {
             recoveryFromSettings = false
             _state.update { stateFor(Stage.LOCKED) }
         }
@@ -79,6 +81,7 @@ class VaultViewModel(app: Application) : AndroidViewModel(app) {
         error = error,
         info = info,
         autoLockSeconds = container.settings.autoLockSeconds,
+        passphraseSlotMissing = vault.exists() && !vault.hasPassphraseSlot(),
         recoveryCode = code,
         biometricAvailable = biometric.isAvailable(),
         biometricEnabled = vault.exists() && biometric.isEnabled(),
@@ -115,6 +118,19 @@ class VaultViewModel(app: Application) : AndroidViewModel(app) {
     fun openChangePassphrase() = _state.update { stateFor(Stage.CHANGE_PASSPHRASE) }
 
     fun closeChangePassphrase() = _state.update { stateFor(Stage.SETTINGS) }
+
+    fun openBackup() = _state.update { stateFor(Stage.BACKUP) }
+
+    /** Back from the Backup screen: to Settings if a vault exists, else to the first-run screen. */
+    fun closeBackup() = _state.update { stateFor(if (vault.exists()) Stage.SETTINGS else Stage.SETUP) }
+
+    /** A backup has just replaced the local vault: show the lock screen with guidance. */
+    fun afterRestore() {
+        val note = if (vault.hasPassphraseSlot()) "Backup restored. Unlock with your passphrase."
+        else "Backup restored. Use your recovery code to set a new passphrase."
+        failures = 0
+        _state.update { stateFor(Stage.LOCKED, info = note) }
+    }
 
     fun setAutoLock(seconds: Int) {
         container.settings.autoLockSeconds = seconds

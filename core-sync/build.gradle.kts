@@ -21,4 +21,6 @@ android {
 dependencies {
     implementation(project(":core-security"))
     testImplementation(libs.junit)
+    // Android's org.json is a stub in local unit tests; this is the real implementation.
+    testImplementation(libs.json)
 }

@@ -26,5 +26,5 @@ files, swaps them in, and rolls back if any step fails.
 - Background jobs may run a few minutes late (Android Doze)
 
 ## Status
-- Done: snapshot engine, cron parser, vault header export/import, unit tests
-- Next: Drive client, Google authorization, WorkManager scheduling, backup screens, restore flow
+- Done: snapshot engine, cron parser, vault header export, Drive REST client (fake-server tests), Google authorizer, backup manager, Backup screen (connect, back up now, list, restore, retention, passphrase-slot setting)
+- Next: WorkManager scheduling (cron, network policy, charging), schedule screen, failure notifications (Phase 7)

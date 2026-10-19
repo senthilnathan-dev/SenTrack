@@ -2,23 +2,28 @@ package `in`.senthilnathan_dev.sentrack
 
 import android.os.Bundle
 import android.view.WindowManager
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.fragment.app.FragmentActivity
+import `in`.senthilnathan_dev.sentrack.backup.BackupScreen
+import `in`.senthilnathan_dev.sentrack.backup.BackupViewModel
 import `in`.senthilnathan_dev.sentrack.ui.theme.SenTrackTheme
-import androidx.activity.compose.BackHandler
 import `in`.senthilnathan_dev.sentrack.ui.vault.ChangePassphraseScreen
 import `in`.senthilnathan_dev.sentrack.ui.vault.LockScreen
-import `in`.senthilnathan_dev.sentrack.ui.vault.SecuritySettingsScreen
 import `in`.senthilnathan_dev.sentrack.ui.vault.RecoverScreen
 import `in`.senthilnathan_dev.sentrack.ui.vault.RecoveryCodeScreen
+import `in`.senthilnathan_dev.sentrack.ui.vault.SecuritySettingsScreen
 import `in`.senthilnathan_dev.sentrack.ui.vault.SetupScreen
 import `in`.senthilnathan_dev.sentrack.ui.vault.Stage
 import `in`.senthilnathan_dev.sentrack.ui.vault.UnlockedHome
@@ -30,6 +35,12 @@ import `in`.senthilnathan_dev.sentrack.ui.vault.VaultViewModel
  */
 class MainActivity : FragmentActivity() {
     private val vaultViewModel: VaultViewModel by viewModels()
+    private val backupViewModel: BackupViewModel by viewModels()
+
+    /** Google's one-time "allow SenTrack to use its Drive app folder" screen. */
+    private val driveConsent = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
+        backupViewModel.onConsentResult(result.data)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,7 +52,7 @@ class MainActivity : FragmentActivity() {
                 Surface(modifier = Modifier.fillMaxSize().safeDrawingPadding()) {
                     val state by vaultViewModel.state.collectAsState()
                     when (state.stage) {
-                        Stage.SETUP -> SetupScreen(state, vaultViewModel::createVault)
+                        Stage.SETUP -> SetupScreen(state, vaultViewModel::createVault, vaultViewModel::openBackup)
                         Stage.SHOW_RECOVERY -> RecoveryCodeScreen(
                             code = state.recoveryCode.orEmpty(),
                             onDone = vaultViewModel::acknowledgeRecovery,
@@ -67,12 +78,33 @@ class MainActivity : FragmentActivity() {
                                 onChangePassphrase = vaultViewModel::openChangePassphrase,
                                 onToggleBiometric = { vaultViewModel.toggleBiometrics(this@MainActivity) },
                                 onNewRecoveryCode = vaultViewModel::regenerateRecoveryCode,
+                                onOpenBackup = vaultViewModel::openBackup,
                                 onBack = vaultViewModel::closeSettings,
                             )
                         }
                         Stage.CHANGE_PASSPHRASE -> {
                             BackHandler(onBack = vaultViewModel::closeChangePassphrase)
                             ChangePassphraseScreen(state, vaultViewModel::changePassphrase, vaultViewModel::closeChangePassphrase)
+                        }
+                        Stage.BACKUP -> {
+                            BackHandler(onBack = vaultViewModel::closeBackup)
+                            LaunchedEffect(Unit) { backupViewModel.refresh() }
+                            val backupState by backupViewModel.state.collectAsState()
+                            BackupScreen(
+                                state = backupState,
+                                onConnect = {
+                                    backupViewModel.connect { pending ->
+                                        driveConsent.launch(IntentSenderRequest.Builder(pending).build())
+                                    }
+                                },
+                                onBackupNow = backupViewModel::backupNow,
+                                onSetRetention = backupViewModel::setRetention,
+                                onSetIncludePassphrase = backupViewModel::setIncludePassphraseSlot,
+                                onAskRestore = backupViewModel::askRestore,
+                                onCancelRestore = backupViewModel::cancelRestore,
+                                onConfirmRestore = { backupViewModel.confirmRestore(vaultViewModel::afterRestore) },
+                                onBack = vaultViewModel::closeBackup,
+                            )
                         }
                     }
                 }

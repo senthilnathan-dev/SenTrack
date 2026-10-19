@@ -36,7 +36,7 @@ import `in`.senthilnathan_dev.sentrack.security.SecuritySettings
 
 /** Shared layout: scrollable centred column with consistent padding. */
 @Composable
-private fun ScreenColumn(content: @Composable () -> Unit) {
+internal fun ScreenColumn(content: @Composable () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -65,12 +65,12 @@ private fun SecretField(label: String, value: String, onChange: (String) -> Unit
 }
 
 @Composable
-private fun ErrorText(error: String?) {
+internal fun ErrorText(error: String?) {
     if (error != null) Text(error, color = MaterialTheme.colorScheme.error)
 }
 
 @Composable
-fun SetupScreen(state: VaultUiState, onCreate: (String, String) -> Unit) {
+fun SetupScreen(state: VaultUiState, onCreate: (String, String) -> Unit, onRestore: () -> Unit) {
     var pass by remember { mutableStateOf("") }
     var confirm by remember { mutableStateOf("") }
     ScreenColumn {
@@ -87,6 +87,7 @@ fun SetupScreen(state: VaultUiState, onCreate: (String, String) -> Unit) {
             enabled = !state.busy,
             modifier = Modifier.fillMaxWidth(),
         ) { Text(if (state.busy) "Creating…" else "Create vault") }
+        TextButton(onClick = onRestore, enabled = !state.busy) { Text("Already use SenTrack? Restore from Google Drive") }
     }
 }
 
@@ -118,15 +119,21 @@ fun LockScreen(
     var pass by remember { mutableStateOf("") }
     ScreenColumn {
         Text("SenTrack is locked", style = MaterialTheme.typography.headlineMedium)
-        SecretField("Passphrase", pass, { pass = it }, !state.busy)
-        ErrorText(state.error)
-        Button(onClick = { onUnlock(pass); pass = "" }, enabled = !state.busy, modifier = Modifier.fillMaxWidth()) {
-            Text(if (state.busy) "Unlocking…" else "Unlock")
+        state.info?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
+        if (state.passphraseSlotMissing) {
+            // Restored from a recovery-only backup: there is no passphrase yet, so only the recovery path works.
+            Button(onClick = onForgot, modifier = Modifier.fillMaxWidth()) { Text("Enter recovery code") }
+        } else {
+            SecretField("Passphrase", pass, { pass = it }, !state.busy)
+            ErrorText(state.error)
+            Button(onClick = { onUnlock(pass); pass = "" }, enabled = !state.busy, modifier = Modifier.fillMaxWidth()) {
+                Text(if (state.busy) "Unlocking…" else "Unlock")
+            }
+            if (state.biometricEnabled && state.biometricAvailable) {
+                OutlinedButton(onClick = onBiometric, modifier = Modifier.fillMaxWidth()) { Text("Use biometrics") }
+            }
+            TextButton(onClick = onForgot) { Text("Forgot passphrase? Use recovery code") }
         }
-        if (state.biometricEnabled && state.biometricAvailable) {
-            OutlinedButton(onClick = onBiometric, modifier = Modifier.fillMaxWidth()) { Text("Use biometrics") }
-        }
-        TextButton(onClick = onForgot) { Text("Forgot passphrase? Use recovery code") }
     }
 }
 
@@ -183,10 +190,12 @@ fun SecuritySettingsScreen(
     onChangePassphrase: () -> Unit,
     onToggleBiometric: () -> Unit,
     onNewRecoveryCode: () -> Unit,
+    onOpenBackup: () -> Unit,
     onBack: () -> Unit,
 ) {
     ScreenColumn {
         Text("Security settings", style = MaterialTheme.typography.headlineMedium)
+        OutlinedButton(onClick = onOpenBackup, modifier = Modifier.fillMaxWidth()) { Text("Backup to Google Drive") }
         state.info?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
         ErrorText(state.error)
 
