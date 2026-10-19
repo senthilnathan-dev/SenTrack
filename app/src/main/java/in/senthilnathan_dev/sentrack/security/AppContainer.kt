@@ -67,6 +67,7 @@ class AppContainer(app: Application) {
     val life = LifeRepository(database)
     val work = WorkRepository(database)
     val career = CareerRepository(database)
+    val ai = AiSettingsStore(database)
 
     /** Encrypted attachment store. Lives in `noBackupFilesDir`, like the vault header. */
     val files = FileVault(File(app.noBackupFilesDir, "vault_files"), session)

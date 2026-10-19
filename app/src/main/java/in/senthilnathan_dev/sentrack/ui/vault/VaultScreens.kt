@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
@@ -34,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import `in`.senthilnathan_dev.sentrack.security.SecuritySettings
 import `in`.senthilnathan_dev.sentrack.core.ui.AppScreen
 import `in`.senthilnathan_dev.sentrack.ui.about.AboutHost
+import `in`.senthilnathan_dev.sentrack.ui.ai.AiHost
 import `in`.senthilnathan_dev.sentrack.core.ui.CenteredScreen
 import `in`.senthilnathan_dev.sentrack.core.ui.ChoiceRow
 import `in`.senthilnathan_dev.sentrack.core.ui.Message
@@ -169,6 +171,11 @@ fun SecuritySettingsScreen(
     onBack: () -> Unit,
 ) {
     var showAbout by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+    var showAi by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+    if (showAi) {
+        AiHost(onBack = { showAi = false })
+        return
+    }
     if (showAbout) {
         AboutHost(onBack = { showAbout = false })
         return
@@ -208,7 +215,8 @@ fun SecuritySettingsScreen(
             NavRow("Backup to Google Drive", "Account, automatic schedule and restore", onOpenBackup, Icons.Filled.CloudUpload)
         }
 
-        Section("About") {
+        Section("More") {
+            NavRow("AI assistant", "Optional, off by default, your own key", { showAi = true }, Icons.Filled.AutoAwesome)
             NavRow("About SenTrack", "Version, privacy policy, terms, licenses", { showAbout = true }, Icons.Filled.Info)
         }
     }

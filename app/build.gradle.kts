@@ -47,6 +47,7 @@ dependencies {
     implementation(project(":feature-personal"))
     implementation(project(":feature-work"))
     implementation(project(":feature-career"))
+    implementation(project(":core-ai"))
     implementation(libs.play.services.auth)
     implementation(libs.androidx.work.runtime)
     implementation(libs.androidx.fragment)
