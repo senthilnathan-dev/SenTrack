@@ -34,7 +34,11 @@ import `in`.senthilnathan_dev.sentrack.core.data.personal.NoteTagEntity
 import `in`.senthilnathan_dev.sentrack.core.data.personal.NoteTagLinkEntity
 import `in`.senthilnathan_dev.sentrack.core.data.reminders.ReminderDao
 import `in`.senthilnathan_dev.sentrack.core.data.reminders.ReminderEntity
+import `in`.senthilnathan_dev.sentrack.core.data.work.AppreciationEntity
 import `in`.senthilnathan_dev.sentrack.core.data.work.AttendanceEntity
+import `in`.senthilnathan_dev.sentrack.core.data.work.WorkAttachmentEntity
+import `in`.senthilnathan_dev.sentrack.core.data.work.WorkPermissionEntity
+import `in`.senthilnathan_dev.sentrack.core.data.work.WorkTaskEntity
 import `in`.senthilnathan_dev.sentrack.core.data.work.CompanyEntity
 import `in`.senthilnathan_dev.sentrack.core.data.work.LeaveEntryEntity
 import `in`.senthilnathan_dev.sentrack.core.data.work.LeaveTypeEntity
@@ -91,10 +95,14 @@ interface MetaDao {
         LeaveTypeEntity::class,
         LeaveEntryEntity::class,
         AttendanceEntity::class,
+        WorkTaskEntity::class,
+        AppreciationEntity::class,
+        WorkPermissionEntity::class,
+        WorkAttachmentEntity::class,
     ],
-    version = 9,
+    version = 10,
     exportSchema = true,
-    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3), AutoMigration(from = 3, to = 5), AutoMigration(from = 5, to = 6), AutoMigration(from = 6, to = 8), AutoMigration(from = 8, to = 9)],
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3), AutoMigration(from = 3, to = 5), AutoMigration(from = 5, to = 6), AutoMigration(from = 6, to = 8), AutoMigration(from = 8, to = 10)],
 )
 abstract class SenTrackDatabase : RoomDatabase() {
     abstract fun metaDao(): MetaDao

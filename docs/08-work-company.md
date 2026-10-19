@@ -12,7 +12,5 @@ The Work tab has three sections: **Today | Leave | Companies**.
   Working days are Monday to Friday; a half day counts 0.5; leave straddling two leave years is split by year
   (`LeaveMath`, unit-tested). A month calendar shades leave days.
 
-Not yet built in this module: permission/late-arrival categories, appreciation records, tasks and the daily summary,
-company holidays, carry-forward of unused leave, attendance reports/export.
-
-Schema: `company`, `leave_type`, `leave_entry`, `attendance` (version 9, auto-migrated from 8).
+Also in this module: **Tasks** (open/done, priority, due date, completed list), **Records** (appreciation with encrypted proof attachments, and permissions with free-text categories that remember what you used), and a **Today at a glance** summary of open, due and overdue tasks. Not yet built: company holidays, leave carry-forward, attendance reports/export, appreciation reminders for appraisal time.
+Schema (version 10, auto-migrated from 8): `company`, `leave_type`, `leave_entry`, `attendance`, `work_task`, `appreciation`, `work_permission`, `work_attachment`.

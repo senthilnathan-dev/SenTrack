@@ -106,7 +106,7 @@ fun UnlockedShell(
                 when (selected) {
                     Tab.FINANCE -> FinanceTab(finance, files, topActions)
                     Tab.PERSONAL -> PersonalTab(notes, habits, life, reminders, files, topActions)
-                    Tab.WORK -> WorkTab(work, topActions)
+                    Tab.WORK -> WorkTab(work, files, topActions)
                 }
             }
         }

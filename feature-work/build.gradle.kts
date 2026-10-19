@@ -25,6 +25,8 @@ android {
 dependencies {
     implementation(project(":core-ui"))
     implementation(project(":core-data"))
+    implementation(project(":core-attachments"))
+    implementation(project(":core-security"))
     implementation(project(":core-alerts"))
     implementation(libs.androidx.activity.compose)
     testImplementation(libs.junit)

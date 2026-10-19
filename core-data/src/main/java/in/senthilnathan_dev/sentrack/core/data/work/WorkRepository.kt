@@ -31,12 +31,44 @@ class WorkRepository(private val holder: DatabaseHolder) {
     suspend fun saveAttendance(entry: AttendanceEntity) = dao().upsertAttendance(entry)
     suspend fun deleteAttendance(id: String) = dao().deleteAttendance(id)
 
-    /** Permanently deletes a company and everything recorded under it. */
-    suspend fun deleteCompany(id: String) {
+    fun tasks(): Flow<List<WorkTaskEntity>> = dao().observeTasks()
+    fun appreciations(): Flow<List<AppreciationEntity>> = dao().observeAppreciations()
+    fun permissions(): Flow<List<WorkPermissionEntity>> = dao().observePermissions()
+    fun attachments(): Flow<List<WorkAttachmentEntity>> = dao().observeWorkAttachments()
+
+    suspend fun saveTask(task: WorkTaskEntity) = dao().upsertTask(task)
+    suspend fun deleteTask(id: String) = dao().deleteTask(id)
+    suspend fun saveAppreciation(a: AppreciationEntity) = dao().upsertAppreciation(a)
+    suspend fun savePermission(p: WorkPermissionEntity) = dao().upsertPermission(p)
+    suspend fun deletePermission(id: String) = dao().deletePermission(id)
+    suspend fun saveAttachment(a: WorkAttachmentEntity) = dao().upsertWorkAttachment(a)
+    suspend fun deleteAttachment(id: String) = dao().deleteWorkAttachment(id)
+
+    /** Deletes an appreciation with its attachment records; returns the vault ids of its files so the caller erases them. */
+    suspend fun deleteAppreciation(id: String): List<String> {
         val dao = dao()
+        val files = dao.workAttachmentsOf(id).map { it.vaultFileId }
+        dao.deleteWorkAttachmentsOf(id)
+        dao.deleteAppreciation(id)
+        return files
+    }
+
+    /**
+     * Permanently deletes a company and everything recorded under it. Returns the vault ids of attachment files,
+     * which the caller must erase from the file vault.
+     */
+    suspend fun deleteCompany(id: String): List<String> {
+        val dao = dao()
+        val files = dao.appreciationIdsOf(id).flatMap { a ->
+            dao.workAttachmentsOf(a).map { it.vaultFileId }.also { dao.deleteWorkAttachmentsOf(a) }
+        }
+        dao.deleteAppreciationsOf(id)
+        dao.deleteTasksOf(id)
+        dao.deletePermissionsOf(id)
         dao.deleteAttendanceOf(id)
         dao.deleteLeavesOf(id)
         dao.deleteLeaveTypesOf(id)
         dao.deleteCompany(id)
+        return files
     }
 }
