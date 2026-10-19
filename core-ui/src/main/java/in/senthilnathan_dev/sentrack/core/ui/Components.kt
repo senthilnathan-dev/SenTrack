@@ -5,8 +5,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -34,14 +40,19 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
@@ -54,25 +65,46 @@ import androidx.compose.ui.unit.dp
  * touch-target sizes stay consistent. Add new shared pieces here rather than styling per screen.
  */
 
-/** Standard screen: top bar (with a back arrow when [onBack] is given) over a scrolling column of [Section]s. */
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * Set to true by a parent (the app shell) that already pads for the system navigation bar below this screen, so a
+ * screen inside it must not pad for it a second time.
+ */
+val LocalBottomInsetHandled = compositionLocalOf { false }
+
+/**
+ * Standard screen, built for one-handed use: a large header that pushes content down toward the thumb and
+ * collapses as you scroll, a scrolling column of [Section]s, and optional controls at the bottom
+ * ([bottomBar], [floatingActionButton]) where the thumb rests.
+ */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AppScreen(
     title: String,
     onBack: (() -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
     floatingActionButton: @Composable () -> Unit = {},
+    bottomBar: @Composable () -> Unit = {},
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val insets = if (LocalBottomInsetHandled.current) {
+        WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
+    } else {
+        ScaffoldDefaults.contentWindowInsets
+    }
     Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        contentWindowInsets = insets,
         floatingActionButton = floatingActionButton,
+        bottomBar = bottomBar,
         topBar = {
-            TopAppBar(
-                title = { Text(title) },
+            LargeTopAppBar(
+                title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 actions = actions,
                 navigationIcon = {
                     if (onBack != null) IconAction(Icons.AutoMirrored.Filled.ArrowBack, "Back", onBack)
                 },
+                scrollBehavior = scrollBehavior,
             )
         },
     ) { padding ->
@@ -84,6 +116,20 @@ fun AppScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
+            content = content,
+        )
+    }
+}
+
+/** A bar pinned to the bottom of the screen for the main action of a form (Save), within thumb reach. */
+@Composable
+fun ActionBar(content: @Composable ColumnScope.() -> Unit) {
+    Surface(tonalElevation = 3.dp, modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier
+                .then(if (LocalBottomInsetHandled.current) Modifier else Modifier.navigationBarsPadding())
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
             content = content,
         )
     }

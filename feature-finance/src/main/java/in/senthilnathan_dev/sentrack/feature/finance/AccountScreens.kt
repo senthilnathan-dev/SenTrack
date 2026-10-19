@@ -29,6 +29,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import `in`.senthilnathan_dev.sentrack.core.data.finance.AccountEntity
 import `in`.senthilnathan_dev.sentrack.core.data.finance.AccountKind
+import `in`.senthilnathan_dev.sentrack.core.ui.ActionBar
 import `in`.senthilnathan_dev.sentrack.core.ui.AppScreen
 import `in`.senthilnathan_dev.sentrack.core.ui.ChoiceRow
 import `in`.senthilnathan_dev.sentrack.core.ui.IconAction
@@ -145,7 +146,26 @@ internal fun AccountEditor(
     var note by remember { mutableStateOf(existing?.note.orEmpty()) }
     var error by remember { mutableStateOf<String?>(null) }
 
-    AppScreen(if (existing == null) "New account" else "Edit account", onBack = onBack) {
+    fun submit() {
+        val opening = if (amount.isBlank()) 0L else Money.parse(amount)
+        when {
+            name.isBlank() -> error = "Give the account a name."
+            opening == null -> error = "Enter the amount as a number, for example 25000 or 1,250.50."
+            else -> onSave(name.trim(), kind, opening, note.ifBlank { null })
+        }
+    }
+
+    AppScreen(
+        if (existing == null) "New account" else "Edit account",
+        onBack = onBack,
+        // Save stays pinned at the bottom, within thumb reach, with any error shown right above it.
+        bottomBar = {
+            ActionBar {
+                Message(error, MessageKind.ERROR)
+                PrimaryButton("Save", onClick = ::submit, icon = Icons.Filled.Check)
+            }
+        },
+    ) {
         Section("Details") {
             OutlinedTextField(
                 value = name,
@@ -190,14 +210,5 @@ internal fun AccountEditor(
             )
         }
 
-        Message(error, MessageKind.ERROR)
-        PrimaryButton("Save", onClick = {
-            val opening = if (amount.isBlank()) 0L else Money.parse(amount)
-            when {
-                name.isBlank() -> error = "Give the account a name."
-                opening == null -> error = "Enter the amount as a number, for example 25000 or 1,250.50."
-                else -> onSave(name.trim(), kind, opening, note.ifBlank { null })
-            }
-        }, icon = Icons.Filled.Check)
     }
 }

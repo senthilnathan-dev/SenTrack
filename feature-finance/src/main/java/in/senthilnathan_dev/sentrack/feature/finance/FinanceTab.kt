@@ -7,10 +7,17 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Dashboard
+import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LeadingIconTab
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,6 +31,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import `in`.senthilnathan_dev.sentrack.core.data.finance.FinanceRepository
 import `in`.senthilnathan_dev.sentrack.core.data.finance.TxType
@@ -43,7 +51,11 @@ internal sealed interface FinanceRoute {
     data object Categories : FinanceRoute
 }
 
-private enum class FinanceSection(val label: String) { DASHBOARD("Dashboard"), ACCOUNTS("Accounts"), ACTIVITY("Activity") }
+private enum class FinanceSection(val label: String, val icon: ImageVector) {
+    DASHBOARD("Dashboard", Icons.Filled.Dashboard),
+    ACCOUNTS("Accounts", Icons.Filled.AccountBalanceWallet),
+    ACTIVITY("Activity", Icons.Filled.Receipt),
+}
 
 /**
  * The Finance tab. It lands on the Dashboard, with Accounts and Activity one tap away and an "Add entry" button
@@ -52,6 +64,7 @@ private enum class FinanceSection(val label: String) { DASHBOARD("Dashboard"), A
  *
  * @param topActions buttons the app shell wants in the top bar (Settings, Lock).
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FinanceTab(repo: FinanceRepository, topActions: @Composable RowScope.() -> Unit) {
     val scope = rememberCoroutineScope()
@@ -77,6 +90,19 @@ fun FinanceTab(repo: FinanceRepository, topActions: @Composable RowScope.() -> U
         FinanceRoute.Home -> AppScreen(
             "Finance",
             actions = topActions,
+            // The section switcher lives at the bottom, where the thumb rests (just above the app's module bar).
+            bottomBar = {
+                PrimaryTabRow(selectedTabIndex = section.ordinal, containerColor = MaterialTheme.colorScheme.surfaceContainer) {
+                    FinanceSection.entries.forEach { s ->
+                        LeadingIconTab(
+                            selected = section == s,
+                            onClick = { section = s },
+                            text = { Text(s.label) },
+                            icon = { Icon(s.icon, contentDescription = null) },
+                        )
+                    }
+                }
+            },
             floatingActionButton = {
                 ExtendedFloatingActionButton(
                     onClick = { open(FinanceRoute.Entry(null)) },
@@ -85,11 +111,6 @@ fun FinanceTab(repo: FinanceRepository, topActions: @Composable RowScope.() -> U
                 )
             },
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FinanceSection.entries.forEach { s ->
-                    FilterChip(selected = section == s, onClick = { section = s }, label = { Text(s.label) })
-                }
-            }
             when (section) {
                 FinanceSection.DASHBOARD -> DashboardContent(
                     summaries = summaries,

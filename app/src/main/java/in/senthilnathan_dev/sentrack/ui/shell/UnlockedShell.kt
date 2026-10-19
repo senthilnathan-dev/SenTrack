@@ -16,6 +16,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -25,6 +26,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import `in`.senthilnathan_dev.sentrack.core.data.finance.FinanceRepository
 import `in`.senthilnathan_dev.sentrack.core.ui.AppScreen
 import `in`.senthilnathan_dev.sentrack.core.ui.IconAction
+import `in`.senthilnathan_dev.sentrack.core.ui.LocalBottomInsetHandled
 import `in`.senthilnathan_dev.sentrack.core.ui.Section
 import `in`.senthilnathan_dev.sentrack.feature.finance.FinanceTab
 
@@ -62,17 +64,20 @@ fun UnlockedShell(finance: FinanceRepository, onLock: () -> Unit, onOpenSettings
             }
         },
     ) { padding ->
-        Box(modifier = Modifier.padding(padding)) {
-            when (selected) {
-                Tab.FINANCE -> FinanceTab(finance, topActions)
-                Tab.PERSONAL -> ComingSoon(
-                    "Personal", topActions,
-                    "Notes, habits, goals and bucket list, achievements, important dates and reminders.",
-                )
-                Tab.WORK -> ComingSoon(
-                    "Work", topActions,
-                    "Punch in and out, leave calendar, tasks and appreciation, plus career tracking and your workspace of apps and sites.",
-                )
+        // The bottom bar above already pads for the system navigation bar, so screens inside must not pad again.
+        CompositionLocalProvider(LocalBottomInsetHandled provides true) {
+            Box(modifier = Modifier.padding(padding)) {
+                when (selected) {
+                    Tab.FINANCE -> FinanceTab(finance, topActions)
+                    Tab.PERSONAL -> ComingSoon(
+                        "Personal", topActions,
+                        "Notes, habits, goals and bucket list, achievements, important dates and reminders.",
+                    )
+                    Tab.WORK -> ComingSoon(
+                        "Work", topActions,
+                        "Punch in and out, leave calendar, tasks and appreciation, plus career tracking and your workspace of apps and sites.",
+                    )
+                }
             }
         }
     }

@@ -32,6 +32,7 @@ import `in`.senthilnathan_dev.sentrack.core.data.finance.CategoryEntity
 import `in`.senthilnathan_dev.sentrack.core.data.finance.CategoryType
 import `in`.senthilnathan_dev.sentrack.core.data.finance.TransactionEntity
 import `in`.senthilnathan_dev.sentrack.core.data.finance.TxType
+import `in`.senthilnathan_dev.sentrack.core.ui.ActionBar
 import `in`.senthilnathan_dev.sentrack.core.ui.AppScreen
 import `in`.senthilnathan_dev.sentrack.core.ui.IconAction
 import `in`.senthilnathan_dev.sentrack.core.ui.Message
@@ -124,10 +125,50 @@ internal fun EntryScreen(
     val received = Money.parse(amountText)
     val principal = if (withdrawAll) availablePrincipal else Money.parse(principalText)
 
+    fun build(): TransactionEntity? {
+        val amount = Money.parse(amountText)
+        if (amount == null || amount <= 0) { error = "Enter an amount greater than zero."; return null }
+        when (type) {
+            TxType.EXPENSE, TxType.INCOME -> if (accountId == null) { error = "Choose an account."; return null }
+            TxType.TRANSFER -> when {
+                accountId == null || toAccountId == null -> { error = "Choose both accounts."; return null }
+                accountId == toAccountId -> { error = "Choose two different accounts."; return null }
+            }
+            TxType.INVEST -> if (toAccountId == null) { error = "Choose the investment."; return null }
+            TxType.WITHDRAW -> when {
+                accountId == null -> { error = "Choose the investment you are withdrawing from."; return null }
+                principal == null || principal < 0 -> { error = "Enter how much invested money this returns."; return null }
+                principal > availablePrincipal -> { error = "That is more than the ${Money.format(availablePrincipal)} still invested here."; return null }
+            }
+        }
+        error = null
+        return TransactionEntity(
+            id = existing?.id ?: UUID.randomUUID().toString(),
+            dateEpochDay = date,
+            type = type,
+            amountPaise = amount,
+            accountId = accountId,
+            toAccountId = if (type == TxType.EXPENSE || type == TxType.INCOME) null else toAccountId,
+            categoryId = if (type == TxType.EXPENSE || type == TxType.INCOME) categoryId else null,
+            principalReturnedPaise = if (type == TxType.WITHDRAW) principal else null,
+            note = note.trim().ifEmpty { null },
+            createdAtMillis = existing?.createdAtMillis ?: System.currentTimeMillis(),
+        )
+    }
     AppScreen(
         if (existing == null) "Add entry" else "Edit entry",
         onBack = onBack,
         actions = { if (onDelete != null) IconAction(Icons.Filled.Delete, "Delete this entry", { confirmDelete = true }) },
+        // Save stays pinned at the bottom, within thumb reach, with any error shown right above it.
+        bottomBar = {
+            ActionBar {
+                Message(error, MessageKind.ERROR)
+                PrimaryButton("Save", onClick = { build()?.let { onSave(it, false) } }, icon = Icons.Filled.Check)
+                if (type == TxType.INCOME && existing == null) {
+                    SecondaryButton("Save and split into investments", onClick = { build()?.let { onSave(it, true) } }, icon = Icons.Filled.CallSplit)
+                }
+            }
+        },
     ) {
         Section("Type") {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -245,43 +286,6 @@ internal fun EntryScreen(
             }
         }
 
-        Message(error, MessageKind.ERROR)
-
-        fun build(): TransactionEntity? {
-            val amount = Money.parse(amountText)
-            if (amount == null || amount <= 0) { error = "Enter an amount greater than zero."; return null }
-            when (type) {
-                TxType.EXPENSE, TxType.INCOME -> if (accountId == null) { error = "Choose an account."; return null }
-                TxType.TRANSFER -> when {
-                    accountId == null || toAccountId == null -> { error = "Choose both accounts."; return null }
-                    accountId == toAccountId -> { error = "Choose two different accounts."; return null }
-                }
-                TxType.INVEST -> if (toAccountId == null) { error = "Choose the investment."; return null }
-                TxType.WITHDRAW -> when {
-                    accountId == null -> { error = "Choose the investment you are withdrawing from."; return null }
-                    principal == null || principal < 0 -> { error = "Enter how much invested money this returns."; return null }
-                    principal > availablePrincipal -> { error = "That is more than the ${Money.format(availablePrincipal)} still invested here."; return null }
-                }
-            }
-            error = null
-            return TransactionEntity(
-                id = existing?.id ?: UUID.randomUUID().toString(),
-                dateEpochDay = date,
-                type = type,
-                amountPaise = amount,
-                accountId = accountId,
-                toAccountId = if (type == TxType.EXPENSE || type == TxType.INCOME) null else toAccountId,
-                categoryId = if (type == TxType.EXPENSE || type == TxType.INCOME) categoryId else null,
-                principalReturnedPaise = if (type == TxType.WITHDRAW) principal else null,
-                note = note.trim().ifEmpty { null },
-                createdAtMillis = existing?.createdAtMillis ?: System.currentTimeMillis(),
-            )
-        }
-
-        PrimaryButton("Save", onClick = { build()?.let { onSave(it, false) } }, icon = Icons.Filled.Check)
-        if (type == TxType.INCOME && existing == null) {
-            SecondaryButton("Save and split into investments", onClick = { build()?.let { onSave(it, true) } }, icon = Icons.Filled.CallSplit)
-        }
     }
 
     if (showNewCategory) {
@@ -346,7 +350,48 @@ internal fun SplitScreen(
     val fromSummary = active.firstOrNull { it.account.id == fromId }
     val left = fromSummary?.let { it.balancePaise - total }
 
-    AppScreen("Split money", onBack = onBack) {
+    fun submitSplit() {
+        val source = fromId
+        val filled = rows.filter { it.destId != null || it.amount.isNotBlank() }
+        val parsed = filled.map { it.destId to Money.parse(it.amount) }
+        when {
+            source == null -> error = "Choose the account the money comes from."
+            parsed.isEmpty() -> error = "Add at least one destination."
+            parsed.any { it.first == null || it.second == null || it.second!! <= 0 } -> error = "Every row needs a destination and an amount."
+            else -> {
+                val now = System.currentTimeMillis()
+                val byId = active.associateBy { it.account.id }
+                onSave(
+                    parsed.mapIndexed { i, (dest, amount) ->
+                        val investing = byId[dest]?.account?.kind?.isInvestment == true
+                        TransactionEntity(
+                            id = UUID.randomUUID().toString(),
+                            dateEpochDay = date,
+                            type = if (investing) TxType.INVEST else TxType.TRANSFER,
+                            amountPaise = amount!!,
+                            accountId = source,
+                            toAccountId = dest,
+                            categoryId = null,
+                            principalReturnedPaise = null,
+                            note = null,
+                            createdAtMillis = now + i,
+                        )
+                    },
+                )
+            }
+        }
+    }
+
+    AppScreen(
+        "Split money",
+        onBack = onBack,
+        bottomBar = {
+            ActionBar {
+                Message(error, MessageKind.ERROR)
+                PrimaryButton("Save split", icon = Icons.Filled.Check, onClick = ::submitSplit)
+            }
+        },
+    ) {
         Section("From", "Choose where the money is now, then share it across your investments. Whatever you do not allocate stays in the account.") {
             PickerField(
                 "Account",
@@ -394,38 +439,5 @@ internal fun SplitScreen(
                 )
             }
         }
-
-        Message(error, MessageKind.ERROR)
-        PrimaryButton("Save split", icon = Icons.Filled.Check, onClick = {
-            val source = fromId
-            val filled = rows.filter { it.destId != null || it.amount.isNotBlank() }
-            val parsed = filled.map { it.destId to Money.parse(it.amount) }
-            when {
-                source == null -> error = "Choose the account the money comes from."
-                parsed.isEmpty() -> error = "Add at least one destination."
-                parsed.any { it.first == null || it.second == null || it.second!! <= 0 } -> error = "Every row needs a destination and an amount."
-                else -> {
-                    val now = System.currentTimeMillis()
-                    val byId = active.associateBy { it.account.id }
-                    onSave(
-                        parsed.mapIndexed { i, (dest, amount) ->
-                            val investing = byId[dest]?.account?.kind?.isInvestment == true
-                            TransactionEntity(
-                                id = UUID.randomUUID().toString(),
-                                dateEpochDay = date,
-                                type = if (investing) TxType.INVEST else TxType.TRANSFER,
-                                amountPaise = amount!!,
-                                accountId = source,
-                                toAccountId = dest,
-                                categoryId = null,
-                                principalReturnedPaise = null,
-                                note = null,
-                                createdAtMillis = now + i,
-                            )
-                        },
-                    )
-                }
-            }
-        })
     }
 }
