@@ -1,0 +1,7 @@
+<resources>
+    <!-- Window theme only; the real look is defined by Compose (ui/theme). -->
+    <style name="Theme.SenTrack" parent="android:Theme.DeviceDefault.DayNight">
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+</resources>

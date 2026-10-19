@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//d/Android/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-gradle-plugin/**)",
+      "Read(//d/Android/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib/**)",
+      "Bash(cd /d/Projects/SenTrack/app/src/main/res && cat xml/data_extraction_rules.xml xml/backup_rules.xml values/strings.xml values-night/themes.xml values/colors.xml; cat ../../../src/test/java/in/senthilnathan_dev/sentrack/ExampleUnitTest.kt; cat /d/Projects/SenTrack/.gitignore 2>/dev/null | head -3; ls -a /d/Projects/SenTrack)",
+      "Bash(git config *)"
+    ]
+  }
+}
