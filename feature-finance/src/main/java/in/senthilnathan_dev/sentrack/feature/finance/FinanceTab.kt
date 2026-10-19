@@ -61,6 +61,7 @@ internal sealed interface FinanceRoute {
     data object Categories : FinanceRoute
     data class GoalEditor(val id: String?) : FinanceRoute
     data object ArchivedGoals : FinanceRoute
+    data object ArchivedTaxYears : FinanceRoute
     data class Filing(val id: String) : FinanceRoute
     data class Viewer(val docId: String) : FinanceRoute
 }
@@ -208,6 +209,7 @@ fun FinanceTab(repo: FinanceRepository, files: FileVault, topActions: @Composabl
                     filings = taxFilings,
                     documents = taxDocuments,
                     onOpen = { taxNotice = null; taxProblem = null; open(FinanceRoute.Filing(it)) },
+                    onOpenArchived = { open(FinanceRoute.ArchivedTaxYears) },
                     onAddYear = { year ->
                         scope.launch {
                             val filing = newFiling(year)
@@ -345,6 +347,7 @@ fun FinanceTab(repo: FinanceRepository, files: FileVault, topActions: @Composabl
                         taxNotice = "Deleted ${doc.name}."
                     }
                 },
+                onToggleArchive = { updated -> scope.launch { repo.saveTaxFiling(updated); back() } },
                 onBack = ::back,
             )
         }
@@ -359,6 +362,16 @@ fun FinanceTab(repo: FinanceRepository, files: FileVault, topActions: @Composabl
                 onBack = ::back,
             )
         }
+
+        FinanceRoute.ArchivedTaxYears -> ArchivedTaxYearsScreen(
+            archived = taxFilings.filter { it.archived },
+            documents = taxDocuments,
+            onOpen = { taxNotice = null; taxProblem = null; open(FinanceRoute.Filing(it)) },
+            onRestore = { id ->
+                taxFilings.firstOrNull { it.id == id }?.let { f -> scope.launch { repo.saveTaxFiling(f.copy(archived = false)) } }
+            },
+            onBack = ::back,
+        )
 
         FinanceRoute.ArchivedGoals -> ArchivedGoalsScreen(
             archived = goalProgress.filter { it.goal.archived },

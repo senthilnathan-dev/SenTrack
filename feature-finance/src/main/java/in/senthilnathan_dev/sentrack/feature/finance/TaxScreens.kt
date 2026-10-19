@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
@@ -20,6 +21,7 @@ import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.PictureAsPdf
+import androidx.compose.material.icons.filled.Unarchive
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -60,16 +62,19 @@ internal fun ColumnScope.TaxFilingsSection(
     documents: List<TaxDocumentEntity>,
     onOpen: (String) -> Unit,
     onAddYear: (Int) -> Unit,
+    onOpenArchived: () -> Unit,
 ) {
     var picking by remember { mutableStateOf(false) }
+    val shown = filings.filterNot { it.archived }   // archived years stay out of sight until asked for
+    val archivedCount = filings.count { it.archived }
     Section(
         "Tax filings",
         "Keep each financial year's filing details and documents (Form 16, AIS, ITR, acknowledgement) encrypted in one place.",
     ) {
-        if (filings.isEmpty()) {
+        if (shown.isEmpty()) {
             Text("No financial year added yet.")
         } else {
-            filings.forEachIndexed { i, f ->
+            shown.forEachIndexed { i, f ->
                 if (i > 0) HorizontalDivider()
                 val count = documents.count { it.filingId == f.id }
                 Row(
@@ -97,6 +102,9 @@ internal fun ColumnScope.TaxFilingsSection(
             }
         }
         SecondaryButton("Add a financial year", onClick = { picking = true }, icon = Icons.Filled.Add)
+        if (archivedCount > 0) {
+            SecondaryButton("Archived tax years ($archivedCount)", onClick = onOpenArchived, icon = Icons.Filled.Archive)
+        }
     }
 
     if (picking) {
@@ -143,6 +151,7 @@ internal fun FilingDetailScreen(
     onOpenDocument: (String) -> Unit,
     onExportDocument: (TaxDocumentEntity) -> Unit,
     onDeleteDocument: (TaxDocumentEntity) -> Unit,
+    onToggleArchive: (TaxFilingEntity) -> Unit,
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -155,6 +164,7 @@ internal fun FilingDetailScreen(
     var error by remember { mutableStateOf<String?>(null) }
     var choosingCategory by remember { mutableStateOf(false) }
     var category by remember { mutableStateOf(TaxDocCategory.FORM_16) }
+    var confirmArchive by remember { mutableStateOf(false) }
     var deleting by remember { mutableStateOf<TaxDocumentEntity?>(null) }
     var typed by remember { mutableStateOf("") }
 
@@ -185,6 +195,11 @@ internal fun FilingDetailScreen(
         if (current != null && current != filing) onSave(current)
     }
 
+    /** Archives or restores this year together with anything typed, so one save cannot overwrite the other. */
+    fun toggleArchive() {
+        onToggleArchive((readFields() ?: filing).copy(archived = !filing.archived))
+    }
+
     // The system Back button and the top-bar arrow both keep what was typed.
     BackHandler {
         saveIfChanged()
@@ -194,6 +209,13 @@ internal fun FilingDetailScreen(
     AppScreen(
         FinanceInsights.financialYearLabel(filing.financialYearStart),
         onBack = { saveIfChanged(); onBack() },
+        actions = {
+            IconAction(
+                if (filing.archived) Icons.Filled.Unarchive else Icons.Filled.Archive,
+                if (filing.archived) "Restore this tax year" else "Archive this tax year",
+                { if (filing.archived) toggleArchive() else confirmArchive = true },
+            )
+        },
         // Save stays pinned at the bottom; its confirmation or error is shown right above it, where you are looking.
         bottomBar = {
             ActionBar {
@@ -284,6 +306,16 @@ internal fun FilingDetailScreen(
         }
     }
 
+    if (confirmArchive) {
+        AlertDialog(
+            onDismissRequest = { confirmArchive = false },
+            title = { Text("Archive ${FinanceInsights.financialYearLabel(filing.financialYearStart)}?") },
+            text = { Text("It moves out of your tax filings list. Its details and documents are kept and can be restored any time from Archived tax years.") },
+            confirmButton = { TextButton(onClick = { confirmArchive = false; toggleArchive() }) { Text("Archive") } },
+            dismissButton = { TextButton(onClick = { confirmArchive = false }) { Text("Cancel") } },
+        )
+    }
+
     if (choosingCategory) {
         AlertDialog(
             onDismissRequest = { choosingCategory = false },
@@ -329,3 +361,45 @@ internal fun newFiling(financialYearStart: Int) = TaxFilingEntity(
     note = null,
     createdAtMillis = System.currentTimeMillis(),
 )
+
+/** Tax years that were archived. Open one to look, or restore it with the icon. */
+@Composable
+internal fun ArchivedTaxYearsScreen(
+    archived: List<TaxFilingEntity>,
+    documents: List<TaxDocumentEntity>,
+    onOpen: (String) -> Unit,
+    onRestore: (String) -> Unit,
+    onBack: () -> Unit,
+) {
+    AppScreen("Archived tax years", onBack = onBack) {
+        if (archived.isEmpty()) {
+            Section("Nothing archived", "Archive a tax year from its page to tidy your list without losing anything.") {}
+        } else {
+            Section("Archived", "Details and documents are kept. Restore a year to bring it back to the list.") {
+                archived.forEachIndexed { i, f ->
+                    if (i > 0) HorizontalDivider()
+                    val count = documents.count { it.filingId == f.id }
+                    Row(
+                        modifier = Modifier.fillMaxWidth().clickable { onOpen(f.id) },
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Column(modifier = Modifier.weight(1f).padding(vertical = 6.dp)) {
+                            Text(FinanceInsights.financialYearLabel(f.financialYearStart), style = MaterialTheme.typography.bodyLarge)
+                            Text(
+                                "${f.status.label} · ${if (count == 1) "1 document" else "$count documents"}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        IconAction(
+                            Icons.Filled.Unarchive,
+                            "Restore ${FinanceInsights.financialYearLabel(f.financialYearStart)}",
+                            { onRestore(f.id) },
+                        )
+                    }
+                }
+            }
+        }
+    }
+}

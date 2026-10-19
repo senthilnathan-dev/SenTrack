@@ -1,5 +1,6 @@
 package `in`.senthilnathan_dev.sentrack.core.data.finance
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -143,6 +144,8 @@ data class TaxFilingEntity(
     val refundPaise: Long?,
     val note: String?,
     val createdAtMillis: Long,
+    /** Archived years stay stored but are hidden from the list until asked for. */
+    @ColumnInfo(defaultValue = "0") val archived: Boolean = false,
 )
 
 /**
