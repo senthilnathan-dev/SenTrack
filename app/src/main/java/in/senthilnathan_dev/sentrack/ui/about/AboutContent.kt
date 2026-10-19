@@ -27,7 +27,7 @@ internal object AboutContent {
         ),
         TextBlock(
             "What leaves your phone",
-            "Nothing, unless you choose it. SenTrack has no account, no advertising, no analytics and no tracking, and it does not send your data to the developer. There are two optional network features. (1) Google Drive backup: when you switch it on, SenTrack uploads an already-encrypted backup file to a private, hidden area of your own Google Drive that only SenTrack can open. Google receives that encrypted file and your Google account details under Google's own terms and privacy policy. (2) AI assistant, off by default: if you turn it on and add your own API key, the text you paste and choose to send is sent to the provider you pick (Google, OpenAI or Anthropic) under their terms, only when you tap Send, after SenTrack shows you exactly what will be sent. The key is stored encrypted on your phone. Files you export or share yourself, and text you copy from the assistant, leave SenTrack in readable form, so handle them with care.",
+            "Nothing, unless you choose it. SenTrack has no account, no advertising, no analytics and no tracking, and it does not send your data to the developer. There are two optional network features. (1) Google Drive backup: when you switch it on, SenTrack uploads an already-encrypted backup file to a private, hidden area of your own Google Drive that only SenTrack can open. Google receives that encrypted file and your Google account details under Google's own terms and privacy policy. (2) AI assistant, off by default. It can run a small model entirely on your phone, in which case nothing is sent anywhere (you import the model file yourself). If instead you add your own API key, the text you paste and choose to send is sent to the provider you pick (Google, OpenAI or Anthropic) under their terms, only when you tap Send, after SenTrack shows you exactly what will be sent. The key is stored encrypted on your phone. Files you export or share yourself, and text you copy from the assistant, leave SenTrack in readable form, so handle them with care.",
         ),
         TextBlock(
             "Permissions SenTrack may ask for",
@@ -80,7 +80,7 @@ internal object AboutContent {
         Release(
             "Unreleased", "in development",
             listOf(
-                "AI assistant (optional, off by default, your own key) for summarizing and tidying text.", "Career: learning, certificates with renewal reminders, job hunt with interview reminders, resume versions, workspace launcher and onboarding/offboarding checklists.",
+                "AI assistant (optional, off by default) for summarizing and tidying text, with an on-device model that is tested on your phone first.", "Career: learning, certificates with renewal reminders, job hunt with interview reminders, resume versions, workspace launcher and onboarding/offboarding checklists.",
                 "Work: companies, punch in and out with one-tap location, leave policy and calendar, tasks with a daily summary, appreciation with proof, permissions.",
                 "Personal: plans, wishlist and bucket list, achievements, important dates with reminders, a unified timeline, habits with streaks, and a modern notes editor.",
                 "Reminders that ring even while the app is locked.",

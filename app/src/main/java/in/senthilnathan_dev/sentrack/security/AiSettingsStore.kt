@@ -37,6 +37,30 @@ class AiSettingsStore(private val holder: DatabaseHolder) {
     suspend fun setModel(provider: AiProvider, model: String) = put("ai.model.${provider.name}", model.trim())
     suspend fun setKey(provider: AiProvider, key: String) = put("ai.key.${provider.name}", key.trim())
 
+    suspend fun loadLocal(): LocalAiState = LocalAiState(
+        enabled = get("ai.local.enabled") == "1",
+        modelName = get("ai.local.model")?.takeIf { it.isNotBlank() },
+        verdict = get("ai.local.verdict")?.takeIf { it.isNotBlank() },
+        summary = get("ai.local.summary")?.split('\n')?.filter { it.isNotBlank() } ?: emptyList(),
+    )
+
+    suspend fun setLocalEnabled(enabled: Boolean) = put("ai.local.enabled", if (enabled) "1" else "0")
+
+    /** Remembers which model was tested and how it did, so the verdict survives restarts. */
+    suspend fun saveBenchmark(modelName: String, verdict: String, summary: List<String>) {
+        put("ai.local.model", modelName)
+        put("ai.local.verdict", verdict)
+        put("ai.local.summary", summary.joinToString("\n"))
+    }
+
+    suspend fun clearLocal() {
+        put("ai.local.enabled", "0"); put("ai.local.model", ""); put("ai.local.verdict", ""); put("ai.local.summary", "")
+    }
+
     /** The stored key for [provider], for the one request that needs it. Never shown on screen. */
     suspend fun key(provider: AiProvider): String? = get("ai.key.${provider.name}")?.takeIf { it.isNotBlank() }
 }
+
+/** The state of the on-device model: whether the user wants it, and how the last phone test went. */
+data class LocalAiState(val enabled: Boolean, val modelName: String?, val verdict: String?, val summary: List<String>)
+

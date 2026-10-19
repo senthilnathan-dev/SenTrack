@@ -43,9 +43,12 @@ import `in`.senthilnathan_dev.sentrack.core.ui.SecretField
 import `in`.senthilnathan_dev.sentrack.core.ui.Section
 import `in`.senthilnathan_dev.sentrack.core.ui.SwitchRow
 import `in`.senthilnathan_dev.sentrack.security.AiSettings
+import `in`.senthilnathan_dev.sentrack.security.LocalAiState
+import `in`.senthilnathan_dev.sentrack.core.ai.local.LocalLlm
+import `in`.senthilnathan_dev.sentrack.core.ai.local.Verdict
 import kotlinx.coroutines.launch
 
-private enum class AiPage { SETTINGS, ASSISTANT }
+private enum class AiPage { SETTINGS, ASSISTANT, LOCAL }
 
 /**
  * AI assistant: settings (off by default, your own key) and a small text assistant. Cloud providers only ever see
@@ -59,17 +62,24 @@ fun AiHost(onBack: () -> Unit) {
     var page by rememberSaveable { mutableStateOf(AiPage.SETTINGS) }
     var settings by remember { mutableStateOf<AiSettings?>(null) }
     var message by remember { mutableStateOf<String?>(null) }
-    BackHandler { if (page == AiPage.ASSISTANT) page = AiPage.SETTINGS else onBack() }
-    suspend fun reload() { settings = store.load() }
+    var local by remember { mutableStateOf<LocalAiState?>(null) }
+    BackHandler { if (page != AiPage.SETTINGS) page = AiPage.SETTINGS else onBack() }
+    suspend fun reload() { settings = store.load(); local = store.loadLocal() }
     LaunchedEffect(Unit) { reload() }
     val s = settings
 
-    if (s == null) {
+    val l = local
+    if (s == null || l == null) {
         AppScreen("AI assistant", onBack = onBack) {}
         return
     }
+    val models = (LocalContext.current.applicationContext as SenTrackApp).container.localModels
+    val localVerdict = l.verdict?.let { v -> Verdict.entries.firstOrNull { it.name == v } }
+    val localReady = l.enabled && (localVerdict == Verdict.GOOD || localVerdict == Verdict.USABLE) && models.modelFile() != null
 
     when (page) {
+        AiPage.LOCAL -> LocalAiScreen(onBack = { page = AiPage.SETTINGS }, onChanged = { scope.launch { reload() } })
+
         AiPage.SETTINGS -> {
             var keyText by remember { mutableStateOf("") }
             var modelText by remember(s.provider, s.model) { mutableStateOf(s.model) }
@@ -106,10 +116,21 @@ fun AiHost(onBack: () -> Unit) {
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                Section("Use it") {
-                    NavRow("Open the assistant", if (s.enabled && s.hasKey) "Summarize, tidy or fix text" else "Turn it on and save a key first", { if (s.enabled && s.hasKey) page = AiPage.ASSISTANT else message = null }, Icons.Filled.AutoAwesome)
+                Section("On-device model", "Runs entirely on this phone, so nothing leaves it. SenTrack tests your phone before allowing it.") {
+                    NavRow(
+                        "On-device model (private)",
+                        when {
+                            localReady -> "Ready: ${localVerdict?.label}"
+                            localVerdict != null -> "Tested: ${localVerdict.label}"
+                            else -> "Not set up yet"
+                        },
+                        { page = AiPage.LOCAL }, Icons.Filled.AutoAwesome,
+                    )
                 }
-                Section("On-device model", "A model that runs entirely on this phone, so nothing leaves it, is planned. It is not available yet.") {}
+                Section("Use it") {
+                    val ready = s.enabled && (s.hasKey || localReady)
+                    NavRow("Open the assistant", if (ready) "Summarize, tidy or fix text" else "Turn it on, then save a key or set up the on-device model", { if (ready) page = AiPage.ASSISTANT else message = null }, Icons.Filled.AutoAwesome)
+                }
             }
         }
 
@@ -118,6 +139,7 @@ fun AiHost(onBack: () -> Unit) {
             var custom by rememberSaveable { mutableStateOf("") }
             var text by rememberSaveable { mutableStateOf("") }
             var busy by remember { mutableStateOf(false) }
+            var onDevice by rememberSaveable { mutableStateOf(true) }
             var result by remember { mutableStateOf<String?>(null) }
             var error by remember { mutableStateOf<String?>(null) }
             val context = LocalContext.current
@@ -131,19 +153,40 @@ fun AiHost(onBack: () -> Unit) {
                     if (task == AiTask.CUSTOM) OutlinedTextField(value = custom, onValueChange = { custom = it }, label = { Text("What should it do?") }, modifier = Modifier.fillMaxWidth())
                     OutlinedTextField(value = text, onValueChange = { text = it }, label = { Text("Paste or type text") }, minLines = 5, modifier = Modifier.fillMaxWidth())
                 }
+                // Choose where the work happens when both are available.
+                val useDevice = if (localReady && s.hasKey) onDevice else localReady
+                if (localReady && s.hasKey) {
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilterChip(selected = onDevice, onClick = { onDevice = true }, label = { Text("On this phone") })
+                        FilterChip(selected = !onDevice, onClick = { onDevice = false }, label = { Text(s.provider.label) })
+                    }
+                }
                 if (text.isNotBlank()) {
-                    Section("Exactly what will be sent to ${s.provider.label}", "Review it. Remove anything private before sending.") {
-                        Text(prompt, style = MaterialTheme.typography.bodySmall)
+                    if (useDevice) {
+                        Section("Stays on this phone", "The on-device model answers. Nothing is sent anywhere. The first answer takes a few seconds while the model loads.") {}
+                    } else {
+                        Section("Exactly what will be sent to ${s.provider.label}", "Review it. Remove anything private before sending.") {
+                            Text(prompt, style = MaterialTheme.typography.bodySmall)
+                        }
                     }
                 }
                 Message(error, MessageKind.ERROR)
-                PrimaryButton(if (busy) "Asking…" else "Send to ${s.provider.label}", enabled = text.isNotBlank() && !busy, busy = busy, icon = Icons.AutoMirrored.Filled.Send, onClick = {
+                PrimaryButton(if (busy) "Working…" else if (useDevice) "Run on this phone" else "Send to ${s.provider.label}", enabled = text.isNotBlank() && !busy, busy = busy, icon = Icons.AutoMirrored.Filled.Send, onClick = {
                     scope.launch {
                         busy = true; error = null; result = null
-                        val key = store.key(s.provider)
-                        if (key == null) error = "No key saved." else when (val r = AiClient.ask(s.provider, s.model, key, prompt)) {
-                            is AiResult.Text -> result = r.text
-                            is AiResult.Failure -> error = r.message
+                        if (useDevice) {
+                            val file = models.modelFile()
+                            if (file == null) error = "The model file is missing. Import it again." else try {
+                                LocalLlm(file.path).use { llm -> llm.load(); result = llm.ask(prompt) }
+                            } catch (e: Throwable) {
+                                error = "The on-device model could not answer: ${e.message ?: e.javaClass.simpleName}."
+                            }
+                        } else {
+                            val key = store.key(s.provider)
+                            if (key == null) error = "No key saved." else when (val r = AiClient.ask(s.provider, s.model, key, prompt)) {
+                                is AiResult.Text -> result = r.text
+                                is AiResult.Failure -> error = r.message
+                            }
                         }
                         busy = false
                     }

@@ -20,6 +20,7 @@ android {
 
 dependencies {
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.litertlm.android)   // on-device language models (LiteRT-LM)
     testImplementation(libs.junit)
     testImplementation(libs.json)   // org.json is part of Android at run time but not on the plain JVM used by unit tests
 }
