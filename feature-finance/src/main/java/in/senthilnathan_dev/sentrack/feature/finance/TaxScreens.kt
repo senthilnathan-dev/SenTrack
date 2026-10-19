@@ -1,6 +1,7 @@
 package `in`.senthilnathan_dev.sentrack.feature.finance
 
 import android.text.format.Formatter
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -30,6 +31,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -144,48 +146,64 @@ internal fun FilingDetailScreen(
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
-    var status by remember { mutableStateOf(filing.status) }
-    var filedOn by remember { mutableStateOf(filing.filedOnEpochDay) }
-    var ack by remember { mutableStateOf(filing.acknowledgementNumber.orEmpty()) }
-    var taxPaid by remember { mutableStateOf(filing.taxPaidPaise?.let { Money.toInput(it) }.orEmpty()) }
-    var refund by remember { mutableStateOf(filing.refundPaise?.let { Money.toInput(it) }.orEmpty()) }
-    var note by remember { mutableStateOf(filing.note.orEmpty()) }
+    var status by rememberSaveable { mutableStateOf(filing.status) }
+    var filedOn by rememberSaveable { mutableStateOf(filing.filedOnEpochDay) }
+    var ack by rememberSaveable { mutableStateOf(filing.acknowledgementNumber.orEmpty()) }
+    var taxPaid by rememberSaveable { mutableStateOf(filing.taxPaidPaise?.let { Money.toInput(it) }.orEmpty()) }
+    var refund by rememberSaveable { mutableStateOf(filing.refundPaise?.let { Money.toInput(it) }.orEmpty()) }
+    var note by rememberSaveable { mutableStateOf(filing.note.orEmpty()) }
     var error by remember { mutableStateOf<String?>(null) }
     var choosingCategory by remember { mutableStateOf(false) }
     var category by remember { mutableStateOf(TaxDocCategory.FORM_16) }
     var deleting by remember { mutableStateOf<TaxDocumentEntity?>(null) }
     var typed by remember { mutableStateOf("") }
 
-    fun submit() {
+    /** The filing as currently typed, or null (with an explanation in [error]) if a number is not valid. */
+    fun readFields(): TaxFilingEntity? {
         val paid = if (taxPaid.isBlank()) null else Money.parse(taxPaid)
         val back = if (refund.isBlank()) null else Money.parse(refund)
-        when {
-            taxPaid.isNotBlank() && paid == null -> error = "Enter tax paid as a number, or leave it empty."
-            refund.isNotBlank() && back == null -> error = "Enter the refund as a number, or leave it empty."
+        return when {
+            taxPaid.isNotBlank() && paid == null -> { error = "Enter tax paid as a number, or leave it empty."; null }
+            refund.isNotBlank() && back == null -> { error = "Enter the refund as a number, or leave it empty."; null }
             else -> {
                 error = null
-                onSave(
-                    filing.copy(
-                        status = status, filedOnEpochDay = filedOn, acknowledgementNumber = ack.trim().ifEmpty { null },
-                        taxPaidPaise = paid, refundPaise = back, note = note.trim().ifEmpty { null },
-                    ),
+                filing.copy(
+                    status = status, filedOnEpochDay = filedOn, acknowledgementNumber = ack.trim().ifEmpty { null },
+                    taxPaidPaise = paid, refundPaise = back, note = note.trim().ifEmpty { null },
                 )
             }
         }
     }
 
+    fun submit() {
+        readFields()?.let(onSave)
+    }
+
+    /** Saves quietly if anything changed and is valid, so details are never lost by leaving or by adding a document. */
+    fun saveIfChanged() {
+        val current = readFields()
+        if (current != null && current != filing) onSave(current)
+    }
+
+    // The system Back button and the top-bar arrow both keep what was typed.
+    BackHandler {
+        saveIfChanged()
+        onBack()
+    }
+
     AppScreen(
         FinanceInsights.financialYearLabel(filing.financialYearStart),
-        onBack = onBack,
+        onBack = { saveIfChanged(); onBack() },
+        // Save stays pinned at the bottom; its confirmation or error is shown right above it, where you are looking.
         bottomBar = {
             ActionBar {
                 Message(error, MessageKind.ERROR)
+                Message(notice, MessageKind.SUCCESS)
+                Message(problem, MessageKind.ERROR)
                 PrimaryButton("Save details", onClick = ::submit, icon = Icons.Filled.Check)
             }
         },
     ) {
-        Message(notice, MessageKind.SUCCESS)
-        Message(problem, MessageKind.ERROR)
 
         Section("Filing") {
             PickerField("Status", status.label, TaxStatus.entries.map { it.label to it }) { status = it }
@@ -259,7 +277,7 @@ internal fun FilingDetailScreen(
             }
             PrimaryButton(
                 if (importing) "Adding…" else "Add documents",
-                onClick = { choosingCategory = true },
+                onClick = { saveIfChanged(); choosingCategory = true },
                 busy = importing,
                 icon = Icons.Filled.AttachFile,
             )
