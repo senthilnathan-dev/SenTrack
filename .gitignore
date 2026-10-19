@@ -23,3 +23,6 @@ keystore.properties
 *.p12
 /app/release/
 *.hprof
+
+# Local assistant settings
+/.claude/
