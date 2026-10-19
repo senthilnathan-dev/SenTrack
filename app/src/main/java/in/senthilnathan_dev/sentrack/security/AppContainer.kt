@@ -11,6 +11,7 @@ import `in`.senthilnathan_dev.sentrack.core.security.biometric.BiometricUnlock
 import `in`.senthilnathan_dev.sentrack.core.security.vault.FileVault
 import `in`.senthilnathan_dev.sentrack.core.security.vault.VaultManager
 import `in`.senthilnathan_dev.sentrack.core.security.vault.VaultSession
+import android.os.SystemClock
 import java.io.File
 
 /**
@@ -52,4 +53,26 @@ class AppContainer(app: Application) {
      */
     @Volatile
     var lockSuppressed: Boolean = false
+
+    @Volatile
+    private var externalFlowAt = 0L
+
+    /**
+     * Call right before opening a system screen the app does not control (file picker, Google sign-in). Returning
+     * from it within [EXTERNAL_FLOW_GRACE_MS] will not trigger the background auto-lock.
+     */
+    fun beginExternalFlow() {
+        externalFlowAt = SystemClock.elapsedRealtime()
+    }
+
+    /** True once if the app is returning from a deliberate external screen started recently. */
+    fun consumeExternalFlow(): Boolean {
+        val started = externalFlowAt
+        externalFlowAt = 0L
+        return started != 0L && SystemClock.elapsedRealtime() - started < EXTERNAL_FLOW_GRACE_MS
+    }
+
+    private companion object {
+        const val EXTERNAL_FLOW_GRACE_MS = 5 * 60 * 1000L
+    }
 }

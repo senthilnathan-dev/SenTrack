@@ -30,6 +30,7 @@ import `in`.senthilnathan_dev.sentrack.core.security.vault.FileVault
 import `in`.senthilnathan_dev.sentrack.core.ui.AppScreen
 import `in`.senthilnathan_dev.sentrack.core.ui.IconAction
 import `in`.senthilnathan_dev.sentrack.core.ui.LocalBottomInsetHandled
+import `in`.senthilnathan_dev.sentrack.core.ui.LocalExternalFlowStarter
 import `in`.senthilnathan_dev.sentrack.core.ui.Section
 import `in`.senthilnathan_dev.sentrack.feature.finance.FinanceTab
 
@@ -45,7 +46,13 @@ private enum class Tab(val label: String, val icon: ImageVector) {
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun UnlockedShell(finance: FinanceRepository, files: FileVault, onLock: () -> Unit, onOpenSettings: () -> Unit) {
+fun UnlockedShell(
+    finance: FinanceRepository,
+    files: FileVault,
+    onLock: () -> Unit,
+    onOpenSettings: () -> Unit,
+    onExternalFlow: () -> Unit,
+) {
     var selected by rememberSaveable { mutableStateOf(Tab.FINANCE) }
     val topActions: @Composable RowScope.() -> Unit = {
         IconAction(Icons.Filled.Settings, "Settings", onOpenSettings)
@@ -72,7 +79,7 @@ fun UnlockedShell(finance: FinanceRepository, files: FileVault, onLock: () -> Un
         },
     ) { padding ->
         // The bottom bar above already pads for the system navigation bar, so screens inside must not pad again.
-        CompositionLocalProvider(LocalBottomInsetHandled provides true) {
+        CompositionLocalProvider(LocalBottomInsetHandled provides true, LocalExternalFlowStarter provides onExternalFlow) {
             Box(modifier = Modifier.padding(padding)) {
                 when (selected) {
                     Tab.FINANCE -> FinanceTab(finance, files, topActions)

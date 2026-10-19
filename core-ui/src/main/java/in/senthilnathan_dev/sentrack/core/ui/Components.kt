@@ -48,6 +48,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -307,3 +308,10 @@ fun SecretField(label: String, value: String, onChange: (String) -> Unit, enable
         modifier = Modifier.fillMaxWidth(),
     )
 }
+
+/**
+ * Call right before opening a system screen the app does not control (file picker, "save as", Google sign-in).
+ * It tells auto-lock this is a deliberate, short trip, so coming back from it does not lock the vault and lose the
+ * screen that is waiting for the result. Provided by the app shell; does nothing elsewhere.
+ */
+val LocalExternalFlowStarter = staticCompositionLocalOf<() -> Unit> { {} }

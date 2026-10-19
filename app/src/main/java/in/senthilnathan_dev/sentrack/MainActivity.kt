@@ -48,6 +48,7 @@ class MainActivity : FragmentActivity() {
     private val accountPicker = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val name = result.data?.getStringExtra(AccountManager.KEY_ACCOUNT_NAME)
         backupViewModel.onAccountChosen(name) { pending ->
+            (application as SenTrackApp).container.beginExternalFlow()
             driveConsent.launch(IntentSenderRequest.Builder(pending).build())
         }
     }
@@ -55,6 +56,7 @@ class MainActivity : FragmentActivity() {
     private fun chooseGoogleAccount() {
         @Suppress("DEPRECATION")
         val intent = AccountManager.newChooseAccountIntent(null, null, arrayOf("com.google"), null, null, null, null)
+        (application as SenTrackApp).container.beginExternalFlow()
         accountPicker.launch(intent)
     }
 
@@ -85,6 +87,7 @@ class MainActivity : FragmentActivity() {
                         Stage.UNLOCKED -> UnlockedShell(
                             finance = (application as SenTrackApp).container.finance,
                             files = (application as SenTrackApp).container.files,
+                            onExternalFlow = { (application as SenTrackApp).container.beginExternalFlow() },
                             onLock = vaultViewModel::lock,
                             onOpenSettings = vaultViewModel::openSettings,
                         )

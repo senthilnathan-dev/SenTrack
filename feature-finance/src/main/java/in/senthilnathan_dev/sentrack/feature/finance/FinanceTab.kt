@@ -43,6 +43,7 @@ import `in`.senthilnathan_dev.sentrack.core.data.finance.TaxDocumentEntity
 import `in`.senthilnathan_dev.sentrack.core.security.vault.FileVault
 import `in`.senthilnathan_dev.sentrack.core.data.finance.TxType
 import `in`.senthilnathan_dev.sentrack.core.ui.AppScreen
+import `in`.senthilnathan_dev.sentrack.core.ui.LocalExternalFlowStarter
 import `in`.senthilnathan_dev.sentrack.core.ui.SecondaryButton
 import java.time.LocalDate
 import java.time.YearMonth
@@ -105,6 +106,7 @@ fun FinanceTab(repo: FinanceRepository, files: FileVault, topActions: @Composabl
     // ---- Tax documents: import from the phone, save a readable copy, with progress and result messages.
     val context = LocalContext.current.applicationContext
     val taxService = remember(repo, files) { TaxDocumentService(context, repo, files) }
+    val beginExternalFlow = LocalExternalFlowStarter.current   // keeps auto-lock from firing while the system picker is open
     var importing by remember { mutableStateOf(false) }
     var taxNotice by remember { mutableStateOf<String?>(null) }
     var taxProblem by remember { mutableStateOf<String?>(null) }
@@ -332,10 +334,11 @@ fun FinanceTab(repo: FinanceRepository, files: FileVault, topActions: @Composabl
                 onSave = { updated -> scope.launch { repo.saveTaxFiling(updated); taxNotice = "Details saved." } },
                 onPickDocuments = { category ->
                     importTarget = filing.id to category
+                    beginExternalFlow()
                     picker.launch(arrayOf("*/*"))
                 },
                 onOpenDocument = { open(FinanceRoute.Viewer(it)) },
-                onExportDocument = { doc -> exportingDoc = doc; exporter.launch(doc.name) },
+                onExportDocument = { doc -> exportingDoc = doc; beginExternalFlow(); exporter.launch(doc.name) },
                 onDeleteDocument = { doc ->
                     scope.launch {
                         taxService.delete(doc)
@@ -352,7 +355,7 @@ fun FinanceTab(repo: FinanceRepository, files: FileVault, topActions: @Composabl
                 doc = doc,
                 service = taxService,
                 files = files,
-                onExport = { exportingDoc = doc; exporter.launch(doc.name) },
+                onExport = { exportingDoc = doc; beginExternalFlow(); exporter.launch(doc.name) },
                 onBack = ::back,
             )
         }

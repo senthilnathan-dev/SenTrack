@@ -38,6 +38,8 @@ class AutoLocker(
 
     override fun onStart(owner: LifecycleOwner) {
         if (stoppedAt == 0L) return
+        // Coming back from a file picker or Google sign-in that the app opened on purpose: do not lock.
+        if (container.consumeExternalFlow()) return
         val timeoutMs = container.settings.autoLockSeconds * 1000L  // read live: changes apply at once
         if (SystemClock.elapsedRealtime() - stoppedAt >= timeoutMs) lockNow()
     }
