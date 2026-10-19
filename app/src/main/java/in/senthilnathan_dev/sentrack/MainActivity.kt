@@ -13,7 +13,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.fragment.app.FragmentActivity
 import `in`.senthilnathan_dev.sentrack.ui.theme.SenTrackTheme
+import androidx.activity.compose.BackHandler
+import `in`.senthilnathan_dev.sentrack.ui.vault.ChangePassphraseScreen
 import `in`.senthilnathan_dev.sentrack.ui.vault.LockScreen
+import `in`.senthilnathan_dev.sentrack.ui.vault.SecuritySettingsScreen
 import `in`.senthilnathan_dev.sentrack.ui.vault.RecoverScreen
 import `in`.senthilnathan_dev.sentrack.ui.vault.RecoveryCodeScreen
 import `in`.senthilnathan_dev.sentrack.ui.vault.SetupScreen
@@ -53,10 +56,24 @@ class MainActivity : FragmentActivity() {
                         Stage.UNLOCKED -> UnlockedHome(
                             state = state,
                             onLock = vaultViewModel::lock,
-                            onToggleBiometric = { vaultViewModel.toggleBiometrics(this@MainActivity) },
-                            onNewRecoveryCode = vaultViewModel::regenerateRecoveryCode,
+                            onOpenSettings = vaultViewModel::openSettings,
                             onCheckDatabase = vaultViewModel::checkDatabase,
                         )
+                        Stage.SETTINGS -> {
+                            BackHandler(onBack = vaultViewModel::closeSettings)
+                            SecuritySettingsScreen(
+                                state = state,
+                                onSetAutoLock = vaultViewModel::setAutoLock,
+                                onChangePassphrase = vaultViewModel::openChangePassphrase,
+                                onToggleBiometric = { vaultViewModel.toggleBiometrics(this@MainActivity) },
+                                onNewRecoveryCode = vaultViewModel::regenerateRecoveryCode,
+                                onBack = vaultViewModel::closeSettings,
+                            )
+                        }
+                        Stage.CHANGE_PASSPHRASE -> {
+                            BackHandler(onBack = vaultViewModel::closeChangePassphrase)
+                            ChangePassphraseScreen(state, vaultViewModel::changePassphrase, vaultViewModel::closeChangePassphrase)
+                        }
                     }
                 }
             }

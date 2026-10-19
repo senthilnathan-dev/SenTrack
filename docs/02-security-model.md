@@ -28,4 +28,5 @@ Protection against a fully compromised OS or an attacker with both the unlocked 
 - Database: Room + SQLCipher with a raw key derived from the data key; verified on a Samsung A34 (Android 16): the file header is random bytes, no `SQLite format` marker, no plaintext strings
 - Auto-lock on screen off and after 30 s in background; `FLAG_SECURE`; brute-force back-off after 5 failures
 - Known limits: passphrase is held in a Compose String while typed (cannot be wiped); back-off counter is in memory only (offline attack resistance comes from Argon2id)
-- Pending: encrypted file vault for attachments, configurable auto-lock timeout, change-passphrase screen
+- File vault: per-file random key wrapped by a vault sub-key and bound to the file id; 64 KiB AES-GCM chunks with a final-chunk flag (detects tampering, truncation, extension, swapping); opaque UUID names
+- Settings: configurable auto-lock (immediately, 30 s, 1 min, 5 min); change-passphrase screen re-wraps the key without re-encrypting data

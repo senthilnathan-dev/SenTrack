@@ -3,6 +3,7 @@ package `in`.senthilnathan_dev.sentrack.security
 import android.app.Application
 import `in`.senthilnathan_dev.sentrack.core.data.DatabaseHolder
 import `in`.senthilnathan_dev.sentrack.core.security.biometric.BiometricUnlock
+import `in`.senthilnathan_dev.sentrack.core.security.vault.FileVault
 import `in`.senthilnathan_dev.sentrack.core.security.vault.VaultManager
 import `in`.senthilnathan_dev.sentrack.core.security.vault.VaultSession
 import java.io.File
@@ -16,6 +17,10 @@ class AppContainer(app: Application) {
     val vault = VaultManager(File(app.noBackupFilesDir, "vault.hdr"), session)
     val biometric = BiometricUnlock(app, vault)
     val database = DatabaseHolder(app, session)
+    val settings = SecuritySettings(app)
+
+    /** Encrypted attachment store. Lives in `noBackupFilesDir`, like the vault header. */
+    val files = FileVault(File(app.noBackupFilesDir, "vault_files"), session)
 
     /**
      * True while a one-time secret (the recovery code) is on screen. Auto-lock is paused so the

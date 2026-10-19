@@ -6,6 +6,7 @@ import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import `in`.senthilnathan_dev.sentrack.SenTrackApp
+import `in`.senthilnathan_dev.sentrack.security.SecuritySettings
 import `in`.senthilnathan_dev.sentrack.core.security.vault.PassphrasePolicy
 import `in`.senthilnathan_dev.sentrack.core.security.vault.UnlockResult
 import kotlinx.coroutines.Dispatchers
@@ -18,12 +19,15 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /** Which vault screen is showing. */
-enum class Stage { SETUP, SHOW_RECOVERY, LOCKED, RECOVER, UNLOCKED }
+enum class Stage { SETUP, SHOW_RECOVERY, LOCKED, RECOVER, UNLOCKED, SETTINGS, CHANGE_PASSPHRASE }
 
 data class VaultUiState(
     val stage: Stage,
     val busy: Boolean = false,
     val error: String? = null,
+    /** One-off success message (e.g. "Passphrase changed"). */
+    val info: String? = null,
+    val autoLockSeconds: Int = SecuritySettings.DEFAULT_AUTO_LOCK_SECONDS,
     val recoveryCode: String? = null,
     val biometricAvailable: Boolean = false,
     val biometricEnabled: Boolean = false,
@@ -40,11 +44,15 @@ class VaultViewModel(app: Application) : AndroidViewModel(app) {
     private val _state = MutableStateFlow(initialState())
     val state: StateFlow<VaultUiState> = _state.asStateFlow()
 
+    private var recoveryFromSettings = false
     private var failures = 0
     private var blockedUntil = 0L
 
     private val lockListener: (Boolean) -> Unit = { unlocked ->
-        if (!unlocked) _state.update { stateFor(Stage.LOCKED) }
+        if (!unlocked) {
+            recoveryFromSettings = false
+            _state.update { stateFor(Stage.LOCKED) }
+        }
     }
 
     init {
@@ -61,9 +69,16 @@ class VaultViewModel(app: Application) : AndroidViewModel(app) {
         else -> stateFor(Stage.LOCKED)
     }
 
-    private fun stateFor(stage: Stage, error: String? = null, code: String? = null) = VaultUiState(
+    private fun stateFor(
+        stage: Stage,
+        error: String? = null,
+        code: String? = null,
+        info: String? = null,
+    ) = VaultUiState(
         stage = stage,
         error = error,
+        info = info,
+        autoLockSeconds = container.settings.autoLockSeconds,
         recoveryCode = code,
         biometricAvailable = biometric.isAvailable(),
         biometricEnabled = vault.exists() && biometric.isEnabled(),
@@ -87,7 +102,47 @@ class VaultViewModel(app: Application) : AndroidViewModel(app) {
     /** User confirmed they saved the recovery code. */
     fun acknowledgeRecovery() {
         container.lockSuppressed = false
-        _state.update { stateFor(Stage.UNLOCKED) }
+        _state.update { stateFor(if (recoveryFromSettings) Stage.SETTINGS else Stage.UNLOCKED) }
+        recoveryFromSettings = false
+    }
+
+    // ---- Navigation inside the unlocked area
+
+    fun openSettings() = _state.update { stateFor(Stage.SETTINGS) }
+
+    fun closeSettings() = _state.update { stateFor(Stage.UNLOCKED) }
+
+    fun openChangePassphrase() = _state.update { stateFor(Stage.CHANGE_PASSPHRASE) }
+
+    fun closeChangePassphrase() = _state.update { stateFor(Stage.SETTINGS) }
+
+    fun setAutoLock(seconds: Int) {
+        container.settings.autoLockSeconds = seconds
+        _state.update { it.copy(autoLockSeconds = seconds) }
+    }
+
+    /** Verifies [current] and re-wraps the vault key under [new]. Your data is not re-encrypted. */
+    fun changePassphrase(current: String, new: String, confirm: String) {
+        throttleMessage()?.let { return fail(it) }
+        val newChars = new.toCharArray()
+        when {
+            newChars.size < PassphrasePolicy.MIN_LENGTH ->
+                return fail("New passphrase needs at least ${PassphrasePolicy.MIN_LENGTH} characters.")
+            new != confirm -> return fail("The two new passphrases do not match.")
+            new == current -> return fail("The new passphrase must differ from the current one.")
+        }
+        val currentChars = current.toCharArray()
+        runBusy {
+            val ok = withContext(Dispatchers.Default) { vault.changePassphrase(currentChars, newChars) }
+            currentChars.fill('\u0000'); newChars.fill('\u0000')
+            if (ok) {
+                failures = 0
+                _state.update { stateFor(Stage.SETTINGS, info = "Passphrase changed.") }
+            } else {
+                registerFailure()
+                fail("Your current passphrase is incorrect.")
+            }
+        }
     }
 
     fun unlock(passphrase: String) {
@@ -153,10 +208,10 @@ class VaultViewModel(app: Application) : AndroidViewModel(app) {
     fun toggleBiometrics(activity: FragmentActivity) {
         if (biometric.isEnabled()) {
             biometric.disable()
-            _state.update { stateFor(Stage.UNLOCKED) }
+            _state.update { stateFor(Stage.SETTINGS) }
         } else {
             biometric.enable(activity) { result ->
-                _state.update { stateFor(Stage.UNLOCKED, error = result.exceptionOrNull()?.let { "Could not enable biometrics." }) }
+                _state.update { stateFor(Stage.SETTINGS, error = result.exceptionOrNull()?.let { "Could not enable biometrics." }) }
             }
         }
     }
@@ -164,6 +219,7 @@ class VaultViewModel(app: Application) : AndroidViewModel(app) {
     /** Issues a new recovery code (the old one stops working) and shows it. */
     fun regenerateRecoveryCode() = runBusy {
         val code = withContext(Dispatchers.Default) { vault.regenerateRecoveryCode() }
+        recoveryFromSettings = true
         container.lockSuppressed = true
         _state.update { stateFor(Stage.SHOW_RECOVERY, code = code) }
     }

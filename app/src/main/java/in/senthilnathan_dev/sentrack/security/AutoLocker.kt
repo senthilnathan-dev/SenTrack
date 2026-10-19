@@ -13,12 +13,11 @@ import androidx.lifecycle.ProcessLifecycleOwner
 
 /**
  * Locks the vault when the screen turns off, and when the app returns from the background
- * after more than [timeoutMs]. (If Android kills the process, the key is gone with it.)
+ * after longer than the user's auto-lock setting. (If Android kills the process, the key is gone with it.)
  */
 class AutoLocker(
     private val app: Application,
     private val container: AppContainer,
-    private val timeoutMs: Long = 30_000,
 ) : DefaultLifecycleObserver {
 
     private var stoppedAt = 0L
@@ -38,7 +37,9 @@ class AutoLocker(
     }
 
     override fun onStart(owner: LifecycleOwner) {
-        if (stoppedAt != 0L && SystemClock.elapsedRealtime() - stoppedAt >= timeoutMs) lockNow()
+        if (stoppedAt == 0L) return
+        val timeoutMs = container.settings.autoLockSeconds * 1000L  // read live: changes apply at once
+        if (SystemClock.elapsedRealtime() - stoppedAt >= timeoutMs) lockNow()
     }
 
     private fun lockNow() {
