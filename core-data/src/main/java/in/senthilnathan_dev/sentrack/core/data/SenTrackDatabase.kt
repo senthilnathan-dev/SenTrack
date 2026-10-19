@@ -8,6 +8,13 @@ import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.RoomDatabase
 import androidx.room.Upsert
+import `in`.senthilnathan_dev.sentrack.core.data.career.CareerAttachmentEntity
+import `in`.senthilnathan_dev.sentrack.core.data.career.CareerDao
+import `in`.senthilnathan_dev.sentrack.core.data.career.CertificationEntity
+import `in`.senthilnathan_dev.sentrack.core.data.career.InterviewEntity
+import `in`.senthilnathan_dev.sentrack.core.data.career.JobApplicationEntity
+import `in`.senthilnathan_dev.sentrack.core.data.career.LearningItemEntity
+import `in`.senthilnathan_dev.sentrack.core.data.career.ResumeEntity
 import `in`.senthilnathan_dev.sentrack.core.data.finance.AccountEntity
 import `in`.senthilnathan_dev.sentrack.core.data.finance.BudgetEntity
 import `in`.senthilnathan_dev.sentrack.core.data.finance.CategoryEntity
@@ -99,10 +106,16 @@ interface MetaDao {
         AppreciationEntity::class,
         WorkPermissionEntity::class,
         WorkAttachmentEntity::class,
+        LearningItemEntity::class,
+        CertificationEntity::class,
+        JobApplicationEntity::class,
+        InterviewEntity::class,
+        ResumeEntity::class,
+        CareerAttachmentEntity::class,
     ],
-    version = 10,
+    version = 11,
     exportSchema = true,
-    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3), AutoMigration(from = 3, to = 5), AutoMigration(from = 5, to = 6), AutoMigration(from = 6, to = 8), AutoMigration(from = 8, to = 10)],
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3), AutoMigration(from = 3, to = 5), AutoMigration(from = 5, to = 6), AutoMigration(from = 6, to = 8), AutoMigration(from = 8, to = 11)],
 )
 abstract class SenTrackDatabase : RoomDatabase() {
     abstract fun metaDao(): MetaDao
@@ -112,4 +125,5 @@ abstract class SenTrackDatabase : RoomDatabase() {
     abstract fun habitDao(): HabitDao
     abstract fun lifeDao(): LifeDao
     abstract fun workDao(): WorkDao
+    abstract fun careerDao(): CareerDao
 }

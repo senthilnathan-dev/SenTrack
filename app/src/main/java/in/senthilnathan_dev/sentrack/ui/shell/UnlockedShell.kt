@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Work
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -31,7 +32,9 @@ import `in`.senthilnathan_dev.sentrack.core.alerts.ReminderRepository
 import `in`.senthilnathan_dev.sentrack.core.data.finance.FinanceRepository
 import `in`.senthilnathan_dev.sentrack.core.data.personal.HabitRepository
 import `in`.senthilnathan_dev.sentrack.core.data.personal.LifeRepository
+import `in`.senthilnathan_dev.sentrack.core.data.career.CareerRepository
 import `in`.senthilnathan_dev.sentrack.core.data.work.WorkRepository
+import `in`.senthilnathan_dev.sentrack.feature.career.CareerTab
 import `in`.senthilnathan_dev.sentrack.feature.work.WorkTab
 import `in`.senthilnathan_dev.sentrack.core.data.personal.NoteRepository
 import `in`.senthilnathan_dev.sentrack.core.security.vault.FileVault
@@ -48,6 +51,7 @@ private enum class Tab(val label: String, val icon: ImageVector) {
     FINANCE("Finance", Icons.Filled.AccountBalance),
     PERSONAL("Personal", Icons.Filled.Favorite),
     WORK("Work", Icons.Filled.Work),
+    CAREER("Career", Icons.Filled.School),
 }
 
 /**
@@ -63,6 +67,7 @@ fun UnlockedShell(
     habits: HabitRepository,
     life: LifeRepository,
     work: WorkRepository,
+    career: CareerRepository,
     reminders: ReminderRepository,
     reminderCenter: ReminderCenter,
     onLock: () -> Unit,
@@ -107,6 +112,7 @@ fun UnlockedShell(
                     Tab.FINANCE -> FinanceTab(finance, files, topActions)
                     Tab.PERSONAL -> PersonalTab(notes, habits, life, reminders, files, topActions)
                     Tab.WORK -> WorkTab(work, files, topActions)
+                    Tab.CAREER -> CareerTab(career, reminders, files, topActions)
                 }
             }
         }
