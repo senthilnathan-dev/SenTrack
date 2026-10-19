@@ -26,3 +26,4 @@ rootProject.name = "SenTrack"
 include(":app")
 include(":core-security")
 include(":core-data")
+include(":core-sync")

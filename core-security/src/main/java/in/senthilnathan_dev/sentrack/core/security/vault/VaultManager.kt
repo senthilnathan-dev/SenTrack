@@ -77,6 +77,8 @@ class VaultManager(
 
     fun unlockWithPassphrase(passphrase: CharArray): UnlockResult {
         val header = readOrNull() ?: return if (exists()) UnlockResult.CORRUPT else UnlockResult.VAULT_MISSING
+        // A recovery-only backup was restored: there is no passphrase slot until one is set via recovery.
+        if (header.passBlob.isEmpty()) return UnlockResult.WRONG_CREDENTIALS
         val kek = derivePassphraseKek(passphrase, header.passSalt, header.params)
         return try {
             val dek = AesGcm.decrypt(kek, header.passBlob, AAD_PASS)
@@ -148,6 +150,32 @@ class VaultManager(
         } finally {
             recoveryBytes.fill(0); recKek.fill(0)
         }
+    }
+
+    // ---- Backup support
+
+    /** False for a vault restored from a recovery-code-only backup, until a passphrase is set. */
+    fun hasPassphraseSlot(): Boolean = readOrNull()?.passBlob?.isNotEmpty() == true
+
+    /**
+     * Header bytes that are safe to upload. The biometric slot is always removed (it is bound to this
+     * phone's Keystore). With [includePassphrase] false the passphrase slot is removed too, so someone
+     * who steals the backup has nothing to brute-force: only the 160-bit recovery code can open it.
+     */
+    fun exportBackupHeader(includePassphrase: Boolean): ByteArray {
+        val header = readOrNull() ?: throw IOException("Vault missing or corrupt")
+        val stripped = header.copy(
+            biometricBlob = null,
+            passSalt = if (includePassphrase) header.passSalt else ByteArray(0),
+            passBlob = if (includePassphrase) header.passBlob else ByteArray(0),
+        )
+        return stripped.toBytes()
+    }
+
+    /** Installs a header taken from a backup (restore). The vault must be locked. */
+    fun installBackupHeader(bytes: ByteArray) {
+        check(!session.isUnlocked) { "Lock the vault before restoring" }
+        write(VaultHeader.fromBytes(bytes).copy(biometricBlob = null))
     }
 
     // ---- Biometric slot: the Keystore work is done by BiometricUnlock; we only persist its blob.

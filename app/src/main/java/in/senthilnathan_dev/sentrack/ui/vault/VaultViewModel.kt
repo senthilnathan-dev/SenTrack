@@ -7,6 +7,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import `in`.senthilnathan_dev.sentrack.SenTrackApp
 import `in`.senthilnathan_dev.sentrack.security.SecuritySettings
+import `in`.senthilnathan_dev.sentrack.core.security.biometric.BiometricFailure
 import `in`.senthilnathan_dev.sentrack.core.security.vault.PassphrasePolicy
 import `in`.senthilnathan_dev.sentrack.core.security.vault.UnlockResult
 import kotlinx.coroutines.Dispatchers
@@ -19,7 +20,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /** Which vault screen is showing. */
-enum class Stage { SETUP, SHOW_RECOVERY, LOCKED, RECOVER, UNLOCKED, SETTINGS, CHANGE_PASSPHRASE }
+enum class Stage { SETUP, SHOW_RECOVERY, LOCKED, RECOVER, UNLOCKED, SETTINGS, CHANGE_PASSPHRASE, BACKUP }
 
 data class VaultUiState(
     val stage: Stage,
@@ -28,6 +29,8 @@ data class VaultUiState(
     /** One-off success message (e.g. "Passphrase changed"). */
     val info: String? = null,
     val autoLockSeconds: Int = SecuritySettings.DEFAULT_AUTO_LOCK_SECONDS,
+    /** True after restoring a recovery-only backup: only the recovery code can open the vault. */
+    val passphraseSlotMissing: Boolean = false,
     val recoveryCode: String? = null,
     val biometricAvailable: Boolean = false,
     val biometricEnabled: Boolean = false,
@@ -49,7 +52,7 @@ class VaultViewModel(app: Application) : AndroidViewModel(app) {
     private var blockedUntil = 0L
 
     private val lockListener: (Boolean) -> Unit = { unlocked ->
-        if (!unlocked) {
+        if (!unlocked && !container.restoring) {
             recoveryFromSettings = false
             _state.update { stateFor(Stage.LOCKED) }
         }
@@ -79,6 +82,7 @@ class VaultViewModel(app: Application) : AndroidViewModel(app) {
         error = error,
         info = info,
         autoLockSeconds = container.settings.autoLockSeconds,
+        passphraseSlotMissing = vault.exists() && !vault.hasPassphraseSlot(),
         recoveryCode = code,
         biometricAvailable = biometric.isAvailable(),
         biometricEnabled = vault.exists() && biometric.isEnabled(),
@@ -115,6 +119,19 @@ class VaultViewModel(app: Application) : AndroidViewModel(app) {
     fun openChangePassphrase() = _state.update { stateFor(Stage.CHANGE_PASSPHRASE) }
 
     fun closeChangePassphrase() = _state.update { stateFor(Stage.SETTINGS) }
+
+    fun openBackup() = _state.update { stateFor(Stage.BACKUP) }
+
+    /** Back from the Backup screen: to Settings if a vault exists, else to the first-run screen. */
+    fun closeBackup() = _state.update { stateFor(if (vault.exists()) Stage.SETTINGS else Stage.SETUP) }
+
+    /** A backup has just replaced the local vault: show the lock screen with guidance. */
+    fun afterRestore() {
+        val note = if (vault.hasPassphraseSlot()) "Backup restored. Unlock with your passphrase."
+        else "Backup restored. Use your recovery code to set a new passphrase."
+        failures = 0
+        _state.update { stateFor(Stage.LOCKED, info = note) }
+    }
 
     fun setAutoLock(seconds: Int) {
         container.settings.autoLockSeconds = seconds
@@ -160,6 +177,14 @@ class VaultViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Re-checks whether biometric unlock is usable; called whenever the lock screen appears. */
+    fun refreshBiometricState() = _state.update {
+        it.copy(
+            biometricAvailable = biometric.isAvailable(),
+            biometricEnabled = vault.exists() && biometric.isEnabled(),
+        )
+    }
+
     fun showRecover() = _state.update { stateFor(Stage.RECOVER) }
 
     fun cancelRecover() = _state.update { stateFor(Stage.LOCKED) }
@@ -200,8 +225,11 @@ class VaultViewModel(app: Application) : AndroidViewModel(app) {
     fun unlockWithBiometrics(activity: FragmentActivity) {
         biometric.unlock(activity) { result ->
             result.onSuccess { _state.update { stateFor(Stage.UNLOCKED) } }
-            // Failures and cancellations simply leave the passphrase field available.
-            result.onFailure { _state.update { stateFor(Stage.LOCKED) } }
+            // Cancelling the prompt is silent; any real failure is shown so it can be diagnosed.
+            result.onFailure { e ->
+                val cancelled = (e as? BiometricFailure)?.userCancelled == true
+                _state.update { stateFor(Stage.LOCKED, error = if (cancelled) null else e.message) }
+            }
         }
     }
 
@@ -211,7 +239,9 @@ class VaultViewModel(app: Application) : AndroidViewModel(app) {
             _state.update { stateFor(Stage.SETTINGS) }
         } else {
             biometric.enable(activity) { result ->
-                _state.update { stateFor(Stage.SETTINGS, error = result.exceptionOrNull()?.let { "Could not enable biometrics." }) }
+                val e = result.exceptionOrNull()
+                val cancelled = (e as? BiometricFailure)?.userCancelled == true
+                _state.update { stateFor(Stage.SETTINGS, error = if (e == null || cancelled) null else e.message) }
             }
         }
     }

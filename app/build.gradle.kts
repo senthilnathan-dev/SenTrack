@@ -39,6 +39,9 @@ android {
 dependencies {
     implementation(project(":core-security"))
     implementation(project(":core-data"))
+    implementation(project(":core-sync"))
+    implementation(libs.play.services.auth)
+    implementation(libs.androidx.work.runtime)
     implementation(libs.androidx.fragment)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.process)
