@@ -26,3 +26,6 @@ keystore.properties
 
 # Local assistant settings
 /.claude/
+
+# Build output in every module
+build/
