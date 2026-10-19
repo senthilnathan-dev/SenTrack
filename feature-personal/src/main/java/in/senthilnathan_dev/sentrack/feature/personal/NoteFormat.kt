@@ -104,7 +104,7 @@ internal object NoteFormat {
         while (i < line.length) {
             val c = line[i]
             when {
-                c == '\' && i + 1 < line.length -> { out += Highlight(i, i + 1, HighlightKind.MARKER); i += 2 }
+                c == '\\' && i + 1 < line.length -> { out += Highlight(i, i + 1, HighlightKind.MARKER); i += 2 }
                 c == '`' && (codeStart >= 0 || line.indexOf('`', i + 1) > 0) -> {
                     out += Highlight(i, i + 1, HighlightKind.MARKER)
                     if (codeStart >= 0) { out += Highlight(codeStart, i, HighlightKind.CODE); codeStart = -1 } else codeStart = i + 1
