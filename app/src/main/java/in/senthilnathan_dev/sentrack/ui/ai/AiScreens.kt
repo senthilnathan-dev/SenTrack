@@ -1,6 +1,9 @@
 package `in`.senthilnathan_dev.sentrack.ui.ai
 
 import androidx.activity.compose.BackHandler
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -8,7 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -22,9 +25,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import `in`.senthilnathan_dev.sentrack.SenTrackApp
 import `in`.senthilnathan_dev.sentrack.core.ai.AiClient
@@ -119,7 +120,7 @@ fun AiHost(onBack: () -> Unit) {
             var busy by remember { mutableStateOf(false) }
             var result by remember { mutableStateOf<String?>(null) }
             var error by remember { mutableStateOf<String?>(null) }
-            val clipboard = LocalClipboardManager.current
+            val context = LocalContext.current
             val prompt = AiProtocol.prompt(task, text, custom)
 
             AppScreen("Assistant", onBack = { page = AiPage.SETTINGS }) {
@@ -136,7 +137,7 @@ fun AiHost(onBack: () -> Unit) {
                     }
                 }
                 Message(error, MessageKind.ERROR)
-                PrimaryButton(if (busy) "Asking…" else "Send to ${s.provider.label}", enabled = text.isNotBlank() && !busy, busy = busy, icon = Icons.Filled.Send, onClick = {
+                PrimaryButton(if (busy) "Asking…" else "Send to ${s.provider.label}", enabled = text.isNotBlank() && !busy, busy = busy, icon = Icons.AutoMirrored.Filled.Send, onClick = {
                     scope.launch {
                         busy = true; error = null; result = null
                         val key = store.key(s.provider)
@@ -150,7 +151,7 @@ fun AiHost(onBack: () -> Unit) {
                 result?.let { out ->
                     Section("Result") {
                         Text(out, style = MaterialTheme.typography.bodyMedium)
-                        SecondaryButton("Copy", icon = Icons.Filled.ContentCopy, onClick = { clipboard.setText(AnnotatedString(out)) })
+                        SecondaryButton("Copy", icon = Icons.Filled.ContentCopy, onClick = { (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText("SenTrack", out)) })
                     }
                 }
             }

@@ -22,8 +22,8 @@ import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Login
-import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.automirrored.filled.Login
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Unarchive
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
@@ -114,7 +114,7 @@ internal fun ColumnScope.TodayContent(
         PrimaryButton(
             if (open == null) "Punch in" else "Punch out",
             onClick = onPunch, busy = busy,
-            icon = if (open == null) Icons.Filled.Login else Icons.Filled.Logout,
+            icon = if (open == null) Icons.AutoMirrored.Filled.Login else Icons.AutoMirrored.Filled.Logout,
         )
         Message(notice, MessageKind.INFO)
         Text(
@@ -123,7 +123,7 @@ internal fun ColumnScope.TodayContent(
         )
     }
 
-    val byDay = records.groupBy { it.dayEpoch }.toSortedMap(compareByDescending { it }).entries.take(14)
+    val byDay = records.groupBy { it.dayEpoch }.toSortedMap(compareByDescending<Long> { it }).entries.take(14)
     if (byDay.isNotEmpty()) {
         Section("Recent days") {
             byDay.forEachIndexed { i, (day, list) ->
