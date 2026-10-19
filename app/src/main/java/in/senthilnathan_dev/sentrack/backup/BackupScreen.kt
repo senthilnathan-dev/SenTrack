@@ -245,7 +245,7 @@ private fun AutomaticSection(state: BackupUiState, actions: BackupActions) {
                         FilterChip(
                             selected = selected,
                             onClick = {
-                                val next = if (selected) weekly!!.days - day else (weekly?.days ?: emptySet()) + day
+                                val next = if (selected) weekly.days - day else (weekly?.days ?: emptySet()) + day
                                 if (next.isNotEmpty()) actions.onSetSchedule(ScheduleSpec.Weekly(next, timeOf(spec)))
                             },
                             label = { Text(day.getDisplayName(TextStyle.SHORT, Locale.ENGLISH)) },
