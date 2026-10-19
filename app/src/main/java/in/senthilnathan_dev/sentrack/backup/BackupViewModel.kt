@@ -9,6 +9,7 @@ import `in`.senthilnathan_dev.sentrack.SenTrackApp
 import `in`.senthilnathan_dev.sentrack.core.sync.CronSchedule
 import `in`.senthilnathan_dev.sentrack.core.sync.NetworkPolicy
 import `in`.senthilnathan_dev.sentrack.core.sync.RemoteBackup
+import `in`.senthilnathan_dev.sentrack.core.sync.ScheduleSpec
 import `in`.senthilnathan_dev.sentrack.core.sync.SchedulePresets
 import java.time.ZonedDateTime
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,9 +35,11 @@ data class BackupUiState(
     /** Google account used for backups, shown so the user always knows where data goes. */
     val accountEmail: String? = null,
     val scheduleEnabled: Boolean = false,
-    /** What the user typed in the schedule box (may be invalid while typing; only valid text is saved). */
-    val cronText: String = BackupSettings.DEFAULT_CRON,
-    val cronError: String? = null,
+    /** The saved schedule, in plain-language form. */
+    val schedule: ScheduleSpec = ScheduleSpec.DEFAULT,
+    /** Advanced: what the user typed in the custom (cron) box; may be invalid while typing. Only valid text is saved. */
+    val customCron: String = "",
+    val customCronError: String? = null,
     /** Upcoming run times (epoch millis) for the valid schedule, shown as a preview. */
     val nextRuns: List<Long> = emptyList(),
     val network: NetworkPolicy = NetworkPolicy.WIFI_ONLY,
@@ -62,7 +65,8 @@ class BackupViewModel(app: Application) : AndroidViewModel(app) {
         includePassphraseSlot = settings.includePassphraseSlot,
         accountEmail = settings.accountEmail,
         scheduleEnabled = settings.scheduleEnabled,
-        cronText = settings.cron,
+        schedule = settings.schedule,
+        customCron = (settings.schedule as? ScheduleSpec.Custom)?.cron.orEmpty(),
         nextRuns = previewRuns(settings.cron),
         network = settings.network,
         requireCharging = settings.requireCharging,
@@ -109,20 +113,39 @@ class BackupViewModel(app: Application) : AndroidViewModel(app) {
         _state.update { it.copy(scheduleEnabled = enabled) }
     }
 
-    /** Saves the schedule only when it is a valid cron expression that is not more frequent than every 15 minutes. */
-    fun setCron(text: String) {
+    /** Saves a plain-language schedule (every N hours, daily, weekly, monthly) and re-plans the next backup. */
+    fun setSchedule(spec: ScheduleSpec) {
+        settings.schedule = spec
+        container.backupScheduler.reschedule()
+        _state.update {
+            it.copy(
+                schedule = spec,
+                customCron = (spec as? ScheduleSpec.Custom)?.cron ?: it.customCron,
+                customCronError = null,
+                nextRuns = previewRuns(spec.toCron()),
+            )
+        }
+    }
+
+    /**
+     * Advanced option: a cron expression typed by the user. Saved only when valid and not more frequent than
+     * every 15 minutes; otherwise an explanation is shown and the previous schedule stays in force.
+     */
+    fun setCustomCron(text: String) {
         val cron = CronSchedule.parseOrNull(text)
         val error = when {
             text.isBlank() -> "Enter a schedule"
-            cron == null -> "Not a valid schedule. Use 5 fields: minute hour day month weekday (for example 0 2 * * *)."
-            !cron.hasMinimumGap(SchedulePresets.MIN_GAP_MINUTES) -> "Too frequent: runs must be at least ${SchedulePresets.MIN_GAP_MINUTES} minutes apart."
+            cron == null -> "Not a valid schedule. It needs 5 parts: minute hour day month weekday."
+            !cron.hasMinimumGap(SchedulePresets.MIN_GAP_MINUTES) ->
+                "Too frequent: backups must be at least ${SchedulePresets.MIN_GAP_MINUTES} minutes apart."
             else -> null
         }
         if (error == null) {
-            settings.cron = text.trim()
-            container.backupScheduler.reschedule()
+            setSchedule(ScheduleSpec.Custom(text))
+            _state.update { it.copy(customCron = text) }
+        } else {
+            _state.update { it.copy(customCron = text, customCronError = error) }
         }
-        _state.update { it.copy(cronText = text, cronError = error, nextRuns = if (error == null) previewRuns(text) else emptyList()) }
     }
 
     fun setNetwork(policy: NetworkPolicy) {

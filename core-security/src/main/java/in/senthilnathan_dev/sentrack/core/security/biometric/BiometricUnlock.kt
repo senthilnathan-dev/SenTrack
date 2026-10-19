@@ -18,6 +18,12 @@ import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
 /**
+ * A biometric step failed. [message] is written for the user; [userCancelled] is true when they simply
+ * dismissed the prompt, which the UI should not report as an error.
+ */
+class BiometricFailure(message: String, val userCancelled: Boolean = false) : Exception(message)
+
+/**
  * Optional fingerprint/face unlock.
  *
  * The data key is wrapped by an Android Keystore AES key that:
@@ -41,7 +47,7 @@ class BiometricUnlock(private val context: Context, private val vault: VaultMana
             createKey()
             Cipher.getInstance(TRANSFORMATION).apply { init(Cipher.ENCRYPT_MODE, loadKey()) }
         } catch (e: Exception) {
-            onResult(Result.failure(e)); return
+            onResult(Result.failure(BiometricFailure("Could not set up biometric unlock (${describe(e)})."))); return
         }
         authenticate(activity, cipher, "Enable biometric unlock", onFailure = { onResult(Result.failure(it)) }) { c ->
             try {
@@ -49,24 +55,28 @@ class BiometricUnlock(private val context: Context, private val vault: VaultMana
                 vault.saveBiometricBlob(blob)
                 onResult(Result.success(Unit))
             } catch (e: Exception) {
-                onResult(Result.failure(e))
+                onResult(Result.failure(BiometricFailure("Could not set up biometric unlock (${describe(e)}).")))
             }
         }
     }
 
     /** Prompts and, on success, unlocks the vault. */
     fun unlock(activity: FragmentActivity, onResult: (Result<Unit>) -> Unit) {
-        val blob = vault.biometricBlob() ?: return onResult(Result.failure(IllegalStateException("Not enabled")))
+        val blob = vault.biometricBlob()
+            ?: return onResult(Result.failure(BiometricFailure("Biometric unlock is not set up.")))
         val cipher = try {
             val iv = blob.copyOfRange(0, IV_BYTES)
             Cipher.getInstance(TRANSFORMATION).apply {
                 init(Cipher.DECRYPT_MODE, loadKey(), GCMParameterSpec(TAG_BITS, iv))
             }
         } catch (e: KeyPermanentlyInvalidatedException) {
-            disable()   // biometrics changed: fall back to passphrase
-            return onResult(Result.failure(e))
+            // Biometrics were changed on the phone, so Android destroyed the key: fall back to the passphrase.
+            disable()
+            return onResult(Result.failure(BiometricFailure("Your biometrics changed, so biometric unlock was switched off. Unlock with your passphrase, then enable it again in Settings.")))
         } catch (e: Exception) {
-            return onResult(Result.failure(e))
+            // Typically the Keystore key is gone (for example after a restore or a reset): repair by switching off.
+            disable()
+            return onResult(Result.failure(BiometricFailure("Biometric unlock was reset (${describe(e)}). Unlock with your passphrase, then enable it again in Settings.")))
         }
         authenticate(activity, cipher, "Unlock SenTrack", onFailure = { onResult(Result.failure(it)) }) { c ->
             try {
@@ -75,7 +85,7 @@ class BiometricUnlock(private val context: Context, private val vault: VaultMana
                 dek.fill(0)
                 onResult(Result.success(Unit))
             } catch (e: Exception) {
-                onResult(Result.failure(e))
+                onResult(Result.failure(BiometricFailure("Could not open the vault with biometrics (${describe(e)}). Use your passphrase.")))
             }
         }
     }
@@ -103,7 +113,11 @@ class BiometricUnlock(private val context: Context, private val vault: VaultMana
                 }
 
                 override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
-                    onFailure(IllegalStateException(errString.toString()))
+                    // Cancelling the prompt is a normal choice, not an error worth showing.
+                    val cancelled = errorCode == BiometricPrompt.ERROR_USER_CANCELED ||
+                        errorCode == BiometricPrompt.ERROR_NEGATIVE_BUTTON ||
+                        errorCode == BiometricPrompt.ERROR_CANCELED
+                    onFailure(BiometricFailure("Biometric check failed: $errString (code $errorCode)", cancelled))
                 }
             },
         )
@@ -117,7 +131,10 @@ class BiometricUnlock(private val context: Context, private val vault: VaultMana
 
     private fun keyStore(): KeyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
 
-    private fun loadKey(): SecretKey = keyStore().getKey(KEY_ALIAS, null) as SecretKey
+    private fun loadKey(): SecretKey =
+        keyStore().getKey(KEY_ALIAS, null) as? SecretKey ?: throw IllegalStateException("the biometric key is missing")
+
+    private fun describe(e: Exception) = "${e.javaClass.simpleName}: ${e.message}"
 
     private fun createKey() {
         runCatching { keyStore().deleteEntry(KEY_ALIAS) }

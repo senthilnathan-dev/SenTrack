@@ -1,22 +1,14 @@
 package `in`.senthilnathan_dev.sentrack.ui.vault
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -29,83 +21,73 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import `in`.senthilnathan_dev.sentrack.security.SecuritySettings
+import `in`.senthilnathan_dev.sentrack.ui.components.AppScreen
+import `in`.senthilnathan_dev.sentrack.ui.components.CenteredScreen
+import `in`.senthilnathan_dev.sentrack.ui.components.ChoiceRow
+import `in`.senthilnathan_dev.sentrack.ui.components.Message
+import `in`.senthilnathan_dev.sentrack.ui.components.MessageKind
+import `in`.senthilnathan_dev.sentrack.ui.components.NavRow
+import `in`.senthilnathan_dev.sentrack.ui.components.PrimaryButton
+import `in`.senthilnathan_dev.sentrack.ui.components.SecondaryButton
+import `in`.senthilnathan_dev.sentrack.ui.components.SecretField
+import `in`.senthilnathan_dev.sentrack.ui.components.Section
+import `in`.senthilnathan_dev.sentrack.ui.components.SwitchRow
 
-/** Shared layout: scrollable centred column with consistent padding. */
-@Composable
-internal fun ScreenColumn(content: @Composable () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
-    ) { content() }
-}
-
-/**
- * Passphrase input. Kept in `remember` (not `rememberSaveable`) on purpose: secrets must not be
- * written into the saved-instance-state bundle.
- */
-@Composable
-private fun SecretField(label: String, value: String, onChange: (String) -> Unit, enabled: Boolean = true) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onChange,
-        label = { Text(label) },
-        singleLine = true,
-        enabled = enabled,
-        visualTransformation = PasswordVisualTransformation(),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false),
-        modifier = Modifier.fillMaxWidth(),
-    )
-}
-
-@Composable
-internal fun ErrorText(error: String?) {
-    if (error != null) Text(error, color = MaterialTheme.colorScheme.error)
-}
+// ---- Sign-in style screens (centred, no top bar)
 
 @Composable
 fun SetupScreen(state: VaultUiState, onCreate: (String, String) -> Unit, onRestore: () -> Unit) {
     var pass by remember { mutableStateOf("") }
     var confirm by remember { mutableStateOf("") }
-    ScreenColumn {
+    CenteredScreen {
         Text("Create your vault", style = MaterialTheme.typography.headlineMedium)
         Text(
             "Everything in SenTrack is encrypted with a key protected by this passphrase. " +
-                "It cannot be reset by anyone, so choose something memorable: a phrase of several words.",
+                "Nobody can reset it for you, so choose a phrase of several words you will remember.",
+            style = MaterialTheme.typography.bodyMedium,
         )
         SecretField("Passphrase (12+ characters)", pass, { pass = it }, !state.busy)
         SecretField("Confirm passphrase", confirm, { confirm = it }, !state.busy)
-        ErrorText(state.error)
-        Button(
-            onClick = { onCreate(pass, confirm) },
-            enabled = !state.busy,
-            modifier = Modifier.fillMaxWidth(),
-        ) { Text(if (state.busy) "Creating…" else "Create vault") }
-        TextButton(onClick = onRestore, enabled = !state.busy) { Text("Already use SenTrack? Restore from Google Drive") }
+        Message(state.error, MessageKind.ERROR)
+        PrimaryButton(if (state.busy) "Creating…" else "Create vault", onClick = { onCreate(pass, confirm) }, busy = state.busy)
+        TextButton(onClick = onRestore, enabled = !state.busy, modifier = Modifier.fillMaxWidth()) {
+            Text("Already use SenTrack? Restore from Google Drive")
+        }
     }
 }
 
 @Composable
 fun RecoveryCodeScreen(code: String, onDone: () -> Unit) {
     var saved by rememberSaveable { mutableStateOf(false) }
-    ScreenColumn {
+    CenteredScreen {
         Text("Your recovery code", style = MaterialTheme.typography.headlineMedium)
-        Text(
-            "If you forget your passphrase, this code is the only way back in. Write it down or print it " +
-                "and keep it somewhere safe. It is shown once and is not stored in the app or in Drive.",
+        Message(
+            "If you forget your passphrase, this code is the only way back in. Write it down or print it and keep it " +
+                "somewhere safe. It is shown once and is not stored in the app or in Drive.",
+            MessageKind.INFO,
         )
-        Text(code, style = MaterialTheme.typography.titleLarge, fontFamily = FontFamily.Monospace)
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            shape = MaterialTheme.shapes.medium,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(
+                code,
+                modifier = Modifier.padding(20.dp),
+                style = MaterialTheme.typography.titleLarge,
+                fontFamily = FontFamily.Monospace,
+            )
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
             Checkbox(checked = saved, onCheckedChange = { saved = it })
             Text("I have saved my recovery code")
         }
-        Button(onClick = onDone, enabled = saved, modifier = Modifier.fillMaxWidth()) { Text("Continue") }
+        PrimaryButton("Continue", onClick = onDone, enabled = saved)
     }
 }
 
@@ -117,22 +99,21 @@ fun LockScreen(
     onForgot: () -> Unit,
 ) {
     var pass by remember { mutableStateOf("") }
-    ScreenColumn {
+    CenteredScreen {
         Text("SenTrack is locked", style = MaterialTheme.typography.headlineMedium)
-        state.info?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
+        Message(state.info, MessageKind.SUCCESS)
         if (state.passphraseSlotMissing) {
             // Restored from a recovery-only backup: there is no passphrase yet, so only the recovery path works.
-            Button(onClick = onForgot, modifier = Modifier.fillMaxWidth()) { Text("Enter recovery code") }
+            Message(state.error, MessageKind.ERROR)
+            PrimaryButton("Enter recovery code", onClick = onForgot)
         } else {
             SecretField("Passphrase", pass, { pass = it }, !state.busy)
-            ErrorText(state.error)
-            Button(onClick = { onUnlock(pass); pass = "" }, enabled = !state.busy, modifier = Modifier.fillMaxWidth()) {
-                Text(if (state.busy) "Unlocking…" else "Unlock")
-            }
+            Message(state.error, MessageKind.ERROR)
+            PrimaryButton(if (state.busy) "Unlocking…" else "Unlock", onClick = { onUnlock(pass); pass = "" }, busy = state.busy)
             if (state.biometricEnabled && state.biometricAvailable) {
-                OutlinedButton(onClick = onBiometric, modifier = Modifier.fillMaxWidth()) { Text("Use biometrics") }
+                SecondaryButton("Use biometrics", onClick = onBiometric, enabled = !state.busy)
             }
-            TextButton(onClick = onForgot) { Text("Forgot passphrase? Use recovery code") }
+            TextButton(onClick = onForgot, modifier = Modifier.fillMaxWidth()) { Text("Forgot passphrase? Use recovery code") }
         }
     }
 }
@@ -142,9 +123,9 @@ fun RecoverScreen(state: VaultUiState, onRecover: (String, String, String) -> Un
     var code by remember { mutableStateOf("") }
     var pass by remember { mutableStateOf("") }
     var confirm by remember { mutableStateOf("") }
-    ScreenColumn {
+    CenteredScreen {
         Text("Recover access", style = MaterialTheme.typography.headlineMedium)
-        Text("Enter your recovery code and choose a new passphrase.")
+        Text("Enter your recovery code and choose a new passphrase.", style = MaterialTheme.typography.bodyMedium)
         OutlinedTextField(
             value = code,
             onValueChange = { code = it },
@@ -155,13 +136,13 @@ fun RecoverScreen(state: VaultUiState, onRecover: (String, String, String) -> Un
         )
         SecretField("New passphrase (12+ characters)", pass, { pass = it }, !state.busy)
         SecretField("Confirm new passphrase", confirm, { confirm = it }, !state.busy)
-        ErrorText(state.error)
-        Button(onClick = { onRecover(code, pass, confirm) }, enabled = !state.busy, modifier = Modifier.fillMaxWidth()) {
-            Text(if (state.busy) "Recovering…" else "Recover")
-        }
-        TextButton(onClick = onCancel) { Text("Back") }
+        Message(state.error, MessageKind.ERROR)
+        PrimaryButton(if (state.busy) "Recovering…" else "Recover", onClick = { onRecover(code, pass, confirm) }, busy = state.busy)
+        TextButton(onClick = onCancel, modifier = Modifier.fillMaxWidth()) { Text("Back") }
     }
 }
+
+// ---- Screens inside the unlocked app (top bar + sections)
 
 /** Temporary Phase 1 home: proves unlock works. Replaced by the real dashboard in Phase 3+. */
 @Composable
@@ -172,17 +153,23 @@ fun UnlockedHome(
     onCheckDatabase: () -> Unit,
 ) {
     LaunchedEffect(Unit) { onCheckDatabase() }
-    ScreenColumn {
-        Text("SenTrack", style = MaterialTheme.typography.headlineLarge)
-        Text("Vault unlocked. Modules arrive in the next phases.")
-        Text("Encrypted database opened ${state.dbOpenCount ?: "…"} time(s).")
-        Button(onClick = onLock, modifier = Modifier.fillMaxWidth()) { Text("Lock now") }
-        OutlinedButton(onClick = onOpenSettings, modifier = Modifier.fillMaxWidth()) { Text("Security settings") }
-        Spacer(Modifier.height(8.dp))
+    AppScreen("SenTrack") {
+        Section("Status") {
+            Text("Your vault is unlocked. Finance, Personal and Work modules arrive in the next phases.")
+            Text(
+                "Encrypted database opened ${state.dbOpenCount ?: "…"} time(s).",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Section("Quick actions") {
+            PrimaryButton("Lock now", onClick = onLock)
+            SecondaryButton("Settings", onClick = onOpenSettings)
+        }
     }
 }
 
-/** Security settings: auto-lock timing, passphrase, biometrics and recovery code. */
+/** Settings: auto-lock timing, biometrics, passphrase, recovery code and the link to backups. */
 @Composable
 fun SecuritySettingsScreen(
     state: VaultUiState,
@@ -193,31 +180,39 @@ fun SecuritySettingsScreen(
     onOpenBackup: () -> Unit,
     onBack: () -> Unit,
 ) {
-    ScreenColumn {
-        Text("Security settings", style = MaterialTheme.typography.headlineMedium)
-        OutlinedButton(onClick = onOpenBackup, modifier = Modifier.fillMaxWidth()) { Text("Backup to Google Drive") }
-        state.info?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
-        ErrorText(state.error)
+    AppScreen("Settings", onBack = onBack) {
+        Message(state.info, MessageKind.SUCCESS)
+        Message(state.error, MessageKind.ERROR)
 
-        Text("Auto-lock when SenTrack is in the background", style = MaterialTheme.typography.titleMedium)
-        SecuritySettings.OPTIONS.forEach { seconds ->
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(selected = state.autoLockSeconds == seconds, onClick = { onSetAutoLock(seconds) })
-                Text(SecuritySettings.label(seconds))
+        Section("Auto-lock", "How long SenTrack may stay in the background before it locks. It also locks whenever the screen turns off.") {
+            SecuritySettings.OPTIONS.forEach { seconds ->
+                ChoiceRow(SecuritySettings.label(seconds), selected = state.autoLockSeconds == seconds) { onSetAutoLock(seconds) }
             }
         }
-        Text("The app also locks whenever the screen turns off.", style = MaterialTheme.typography.bodySmall)
 
-        OutlinedButton(onClick = onChangePassphrase, modifier = Modifier.fillMaxWidth()) { Text("Change passphrase") }
-        if (state.biometricAvailable) {
-            OutlinedButton(onClick = onToggleBiometric, modifier = Modifier.fillMaxWidth()) {
-                Text(if (state.biometricEnabled) "Disable biometric unlock" else "Enable biometric unlock")
+        Section("Unlocking") {
+            if (state.biometricAvailable) {
+                SwitchRow(
+                    title = "Biometric unlock",
+                    subtitle = "Use your fingerprint or face instead of typing the passphrase.",
+                    checked = state.biometricEnabled,
+                    enabled = !state.busy,
+                    onChange = { onToggleBiometric() },
+                )
             }
+            NavRow("Change passphrase", "Your data is not re-encrypted, so this is quick.", onChangePassphrase)
         }
-        OutlinedButton(onClick = onNewRecoveryCode, enabled = !state.busy, modifier = Modifier.fillMaxWidth()) {
-            Text("Generate new recovery code")
+
+        Section(
+            "Recovery code",
+            "The only way back in if you forget your passphrase. Creating a new one makes the old one stop working.",
+        ) {
+            SecondaryButton("Generate new recovery code", onClick = onNewRecoveryCode, enabled = !state.busy)
         }
-        TextButton(onClick = onBack) { Text("Back") }
+
+        Section("Backup") {
+            NavRow("Backup to Google Drive", "Account, automatic schedule and restore", onOpenBackup)
+        }
     }
 }
 
@@ -226,16 +221,17 @@ fun ChangePassphraseScreen(state: VaultUiState, onChange: (String, String, Strin
     var current by remember { mutableStateOf("") }
     var new by remember { mutableStateOf("") }
     var confirm by remember { mutableStateOf("") }
-    ScreenColumn {
-        Text("Change passphrase", style = MaterialTheme.typography.headlineMedium)
-        Text("Your data is not re-encrypted; only the key protecting it is re-wrapped, so this is quick. Your recovery code stays valid.")
-        SecretField("Current passphrase", current, { current = it }, !state.busy)
-        SecretField("New passphrase (12+ characters)", new, { new = it }, !state.busy)
-        SecretField("Confirm new passphrase", confirm, { confirm = it }, !state.busy)
-        ErrorText(state.error)
-        Button(onClick = { onChange(current, new, confirm) }, enabled = !state.busy, modifier = Modifier.fillMaxWidth()) {
-            Text(if (state.busy) "Changing…" else "Change passphrase")
+    AppScreen("Change passphrase", onBack = onBack) {
+        Section("New passphrase", "Your recovery code stays valid. Use at least 12 characters.") {
+            SecretField("Current passphrase", current, { current = it }, !state.busy)
+            SecretField("New passphrase", new, { new = it }, !state.busy)
+            SecretField("Confirm new passphrase", confirm, { confirm = it }, !state.busy)
         }
-        TextButton(onClick = onBack) { Text("Cancel") }
+        Message(state.error, MessageKind.ERROR)
+        PrimaryButton(
+            if (state.busy) "Changing…" else "Change passphrase",
+            onClick = { onChange(current, new, confirm) },
+            busy = state.busy,
+        )
     }
 }

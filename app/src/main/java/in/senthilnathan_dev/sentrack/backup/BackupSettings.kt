@@ -2,6 +2,7 @@ package `in`.senthilnathan_dev.sentrack.backup
 
 import android.content.Context
 import `in`.senthilnathan_dev.sentrack.core.sync.NetworkPolicy
+import `in`.senthilnathan_dev.sentrack.core.sync.ScheduleSpec
 
 /**
  * Backup preferences and the last-run status. Nothing secret: no tokens or keys are kept here
@@ -25,10 +26,13 @@ class BackupSettings(context: Context) {
         get() = prefs.getBoolean("schedule_enabled", false)
         set(v) = prefs.edit().putBoolean("schedule_enabled", v).apply()
 
-    /** Cron expression for scheduled backups. */
-    var cron: String
-        get() = prefs.getString("cron", DEFAULT_CRON) ?: DEFAULT_CRON
-        set(v) = prefs.edit().putString("cron", v).apply()
+    /** When scheduled backups run, in plain-language form. */
+    var schedule: ScheduleSpec
+        get() = ScheduleSpec.decode(prefs.getString("schedule", null)) ?: ScheduleSpec.DEFAULT
+        set(v) = prefs.edit().putString("schedule", v.encode()).apply()
+
+    /** The schedule as a cron expression (what the scheduler computes run times from). */
+    val cron: String get() = schedule.toCron()
 
     var network: NetworkPolicy
         get() = runCatching { NetworkPolicy.valueOf(prefs.getString("network", null) ?: "") }.getOrDefault(NetworkPolicy.WIFI_ONLY)
@@ -62,7 +66,6 @@ class BackupSettings(context: Context) {
         set(v) = prefs.edit().putString("last_error", v).apply()
 
     companion object {
-        const val DEFAULT_CRON = "0 2 * * *"
         const val DEFAULT_RETENTION = 3
         const val MIN_RETENTION = 1
         const val MAX_RETENTION = 10

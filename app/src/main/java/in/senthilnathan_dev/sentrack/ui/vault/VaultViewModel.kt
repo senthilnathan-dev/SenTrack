@@ -7,6 +7,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import `in`.senthilnathan_dev.sentrack.SenTrackApp
 import `in`.senthilnathan_dev.sentrack.security.SecuritySettings
+import `in`.senthilnathan_dev.sentrack.core.security.biometric.BiometricFailure
 import `in`.senthilnathan_dev.sentrack.core.security.vault.PassphrasePolicy
 import `in`.senthilnathan_dev.sentrack.core.security.vault.UnlockResult
 import kotlinx.coroutines.Dispatchers
@@ -216,8 +217,11 @@ class VaultViewModel(app: Application) : AndroidViewModel(app) {
     fun unlockWithBiometrics(activity: FragmentActivity) {
         biometric.unlock(activity) { result ->
             result.onSuccess { _state.update { stateFor(Stage.UNLOCKED) } }
-            // Failures and cancellations simply leave the passphrase field available.
-            result.onFailure { _state.update { stateFor(Stage.LOCKED) } }
+            // Cancelling the prompt is silent; any real failure is shown so it can be diagnosed.
+            result.onFailure { e ->
+                val cancelled = (e as? BiometricFailure)?.userCancelled == true
+                _state.update { stateFor(Stage.LOCKED, error = if (cancelled) null else e.message) }
+            }
         }
     }
 
@@ -227,7 +231,9 @@ class VaultViewModel(app: Application) : AndroidViewModel(app) {
             _state.update { stateFor(Stage.SETTINGS) }
         } else {
             biometric.enable(activity) { result ->
-                _state.update { stateFor(Stage.SETTINGS, error = result.exceptionOrNull()?.let { "Could not enable biometrics." }) }
+                val e = result.exceptionOrNull()
+                val cancelled = (e as? BiometricFailure)?.userCancelled == true
+                _state.update { stateFor(Stage.SETTINGS, error = if (e == null || cancelled) null else e.message) }
             }
         }
     }

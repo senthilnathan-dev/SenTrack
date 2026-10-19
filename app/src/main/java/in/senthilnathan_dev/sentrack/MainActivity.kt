@@ -10,7 +10,6 @@ import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -65,7 +64,7 @@ class MainActivity : FragmentActivity() {
         enableEdgeToEdge()
         setContent {
             SenTrackTheme {
-                Surface(modifier = Modifier.fillMaxSize().safeDrawingPadding()) {
+                Surface(modifier = Modifier.fillMaxSize()) {
                     val state by vaultViewModel.state.collectAsState()
                     when (state.stage) {
                         Stage.SETUP -> SetupScreen(state, vaultViewModel::createVault, vaultViewModel::openBackup)
@@ -115,7 +114,8 @@ class MainActivity : FragmentActivity() {
                                     onSetRetention = backupViewModel::setRetention,
                                     onSetIncludePassphrase = backupViewModel::setIncludePassphraseSlot,
                                     onSetScheduleEnabled = backupViewModel::setScheduleEnabled,
-                                    onSetCron = backupViewModel::setCron,
+                                    onSetSchedule = backupViewModel::setSchedule,
+                                    onSetCustomCron = backupViewModel::setCustomCron,
                                     onSetNetwork = backupViewModel::setNetwork,
                                     onSetRequireCharging = backupViewModel::setRequireCharging,
                                     onAskRestore = backupViewModel::askRestore,
