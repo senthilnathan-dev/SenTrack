@@ -17,7 +17,13 @@ import `in`.senthilnathan_dev.sentrack.core.data.finance.GoalEntity
 import `in`.senthilnathan_dev.sentrack.core.data.finance.TaxDocumentEntity
 import `in`.senthilnathan_dev.sentrack.core.data.finance.TaxFilingEntity
 import `in`.senthilnathan_dev.sentrack.core.data.finance.TransactionEntity
+import `in`.senthilnathan_dev.sentrack.core.data.personal.AchievementEntity
 import `in`.senthilnathan_dev.sentrack.core.data.personal.HabitDao
+import `in`.senthilnathan_dev.sentrack.core.data.personal.ImportantDateEntity
+import `in`.senthilnathan_dev.sentrack.core.data.personal.LifeDao
+import `in`.senthilnathan_dev.sentrack.core.data.personal.PersonalAttachmentEntity
+import `in`.senthilnathan_dev.sentrack.core.data.personal.PlanItemEntity
+import `in`.senthilnathan_dev.sentrack.core.data.personal.PlanStepEntity
 import `in`.senthilnathan_dev.sentrack.core.data.personal.HabitEntity
 import `in`.senthilnathan_dev.sentrack.core.data.personal.HabitLogEntity
 import `in`.senthilnathan_dev.sentrack.core.data.personal.NoteAttachmentEntity
@@ -50,7 +56,7 @@ interface MetaDao {
  * every schema change bumps [version] and ships a tested migration (schemas are exported).
  *
  * History: 1 = meta table. 2 = Finance tables. 3 = tax filings and documents. 4 = tax-year archive flag (never shipped
- * on its own). 5 = reminders. 6 = notes (folders, tags, attachments). 7 = habits and habit logs. Version 4 was folded into the 3 to 5 auto-migration, so there is no 4.json schema file.
+ * on its own). 5 = reminders. 6 = notes (folders, tags, attachments). 7 = habits and habit logs (never shipped alone; folded into the 6 to 8 migration). Version 4 was folded into the 3 to 5 auto-migration, so there is no 4.json schema file.
  */
 @Database(
     entities = [
@@ -71,10 +77,15 @@ interface MetaDao {
         NoteAttachmentEntity::class,
         HabitEntity::class,
         HabitLogEntity::class,
+        PlanItemEntity::class,
+        PlanStepEntity::class,
+        AchievementEntity::class,
+        ImportantDateEntity::class,
+        PersonalAttachmentEntity::class,
     ],
-    version = 7,
+    version = 8,
     exportSchema = true,
-    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3), AutoMigration(from = 3, to = 5), AutoMigration(from = 5, to = 6), AutoMigration(from = 6, to = 7)],
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3), AutoMigration(from = 3, to = 5), AutoMigration(from = 5, to = 6), AutoMigration(from = 6, to = 8)],
 )
 abstract class SenTrackDatabase : RoomDatabase() {
     abstract fun metaDao(): MetaDao
@@ -82,4 +93,5 @@ abstract class SenTrackDatabase : RoomDatabase() {
     abstract fun reminderDao(): ReminderDao
     abstract fun noteDao(): NoteDao
     abstract fun habitDao(): HabitDao
+    abstract fun lifeDao(): LifeDao
 }

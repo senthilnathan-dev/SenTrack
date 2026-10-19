@@ -33,3 +33,32 @@ Habits, plans / goals / wishlist / bucket list, achievements, important dates (u
 - Streak rules: the period still in progress never breaks a streak; unscheduled days are skipped; tracking starts at the habit's start date (`HabitEngine`, tested)
 - Reminders for daily and weekly habits through the shared reminders engine (reminder id `habit-<id>`); archiving pauses it, restoring resumes it
 - Schema v7: `habit`, `habit_log` (one row per habit per day)
+
+## Plans and Moments (schema v8)
+
+The Personal tab now has five sections along the bottom: **Timeline | Notes | Habits | Plans | Moments**.
+
+### Plans
+One table holds goals, plans, wishlist items and bucket-list items (`plan_item.kind`). Each has a status
+(to do / in progress / done), a priority, an optional target date and cost, and an ordered list of **steps**
+(`plan_step`). Progress is the share of steps ticked; with no steps it follows the status. A target date can raise a
+one-off 9 am reminder (reminder id `item-<id>`). Ticking the circle on a card marks the item done and records the date;
+done items feed the timeline.
+
+### Moments
+* **Achievements**: title, story, free category (Career, Education...), date, attachments (certificate, photo, mail).
+* **Important dates**: birthdays, anniversaries, events. A yearly date repeats and shows "Turns 36" or "5th
+  anniversary"; the list is sorted by how soon each comes round (`DateMath.nextOccurrence`, 29 Feb falls on 28 Feb in
+  other years). The reminder (id `date-<id>`) fires N days before at a chosen time: yearly dates use a yearly schedule,
+  one-offs ring once.
+
+### Shared behaviour
+* Archive-not-delete: archived items are hidden behind an "Archived ..." button; permanent deletion needs the word
+  DELETE typed and also erases attachments and reminders.
+* Attachments (`personal_attachment`, owner kind PLAN or ACHIEVEMENT) use the same encrypted file vault and viewer as
+  notes. They can be added once the item has been saved.
+* **Timeline** merges notes, achievements, important dates that have arrived and finished plan items, newest first, with
+  search over titles. Habit milestones are not on it yet.
+
+### Migration note
+Database version 7 (habits) was never built on its own, so there is no `7.json`; the chain jumps `6 -> 8`.
