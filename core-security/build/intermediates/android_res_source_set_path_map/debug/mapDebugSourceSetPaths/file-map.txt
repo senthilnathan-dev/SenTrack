@@ -1,0 +1,9 @@
+in.senthilnathan_dev.sentrack.core.security.core-security-pngs-0 D:\Projects\SenTrack\core-security\build\generated\res\pngs\debug
+in.senthilnathan_dev.sentrack.core.security.core-security-updated_navigation_xml-1 D:\Projects\SenTrack\core-security\build\generated\updated_navigation_xml\debug
+in.senthilnathan_dev.sentrack.core.security.core-security-mergeDebugResources-2 D:\Projects\SenTrack\core-security\build\intermediates\incremental\debug\mergeDebugResources\merged.dir
+in.senthilnathan_dev.sentrack.core.security.core-security-mergeDebugResources-3 D:\Projects\SenTrack\core-security\build\intermediates\incremental\debug\mergeDebugResources\stripped.dir
+in.senthilnathan_dev.sentrack.core.security.core-security-debug-4 D:\Projects\SenTrack\core-security\build\intermediates\merged_res\debug\mergeDebugResources
+in.senthilnathan_dev.sentrack.core.security.core-security-debug-5 D:\Projects\SenTrack\core-security\build\intermediates\packaged_res\debug\packageDebugResources
+in.senthilnathan_dev.sentrack.core.security.core-security-debug-6 D:\Projects\SenTrack\core-security\src\debug\res
+in.senthilnathan_dev.sentrack.core.security.core-security-main-7 D:\Projects\SenTrack\core-security\src\main\res
+gradleHome-0 D:\Android\.gradle

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="in.senthilnathan_dev.sentrack.core.security.VaultManagerTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-10-19T10:53:09.842Z" hostname="MUMLP1976342" time="0.16">
+  <properties/>
+  <testcase name="create_unlocksAndWritesHeader" classname="in.senthilnathan_dev.sentrack.core.security.VaultManagerTest" time="0.035"/>
+  <testcase name="shortPassphrase_isRejected" classname="in.senthilnathan_dev.sentrack.core.security.VaultManagerTest" time="0.001"/>
+  <testcase name="wrongRecoveryCode_isRejected" classname="in.senthilnathan_dev.sentrack.core.security.VaultManagerTest" time="0.01"/>
+  <testcase name="corruptedHeader_isReportedNotCrashing" classname="in.senthilnathan_dev.sentrack.core.security.VaultManagerTest" time="0.022"/>
+  <testcase name="unlock_withCorrectPassphrase_sameKeysAsBefore" classname="in.senthilnathan_dev.sentrack.core.security.VaultManagerTest" time="0.012"/>
+  <testcase name="subKeys_differByLabel_andLockWipesAccess" classname="in.senthilnathan_dev.sentrack.core.security.VaultManagerTest" time="0.011"/>
+  <testcase name="changePassphrase_requiresCurrent" classname="in.senthilnathan_dev.sentrack.core.security.VaultManagerTest" time="0.016"/>
+  <testcase name="unlock_withWrongPassphrase_failsAndStaysLocked" classname="in.senthilnathan_dev.sentrack.core.security.VaultManagerTest" time="0.006"/>
+  <testcase name="regenerateRecoveryCode_invalidatesOldOne" classname="in.senthilnathan_dev.sentrack.core.security.VaultManagerTest" time="0.019"/>
+  <testcase name="recoveryCode_resetsPassphrase" classname="in.senthilnathan_dev.sentrack.core.security.VaultManagerTest" time="0.026"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

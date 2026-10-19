@@ -1,0 +1,24 @@
+package `in`.senthilnathan_dev.sentrack.security
+
+import android.app.Application
+import `in`.senthilnathan_dev.sentrack.core.security.biometric.BiometricUnlock
+import `in`.senthilnathan_dev.sentrack.core.security.vault.VaultManager
+import `in`.senthilnathan_dev.sentrack.core.security.vault.VaultSession
+import java.io.File
+
+/**
+ * Hand-wired dependencies (manual DI for now; Hilt arrives with the feature modules).
+ * The vault header lives in `noBackupFilesDir`, which Android never backs up.
+ */
+class AppContainer(app: Application) {
+    val session = VaultSession()
+    val vault = VaultManager(File(app.noBackupFilesDir, "vault.hdr"), session)
+    val biometric = BiometricUnlock(app, vault)
+
+    /**
+     * True while a one-time secret (the recovery code) is on screen. Auto-lock is paused so the
+     * user cannot lose the code mid-copy.
+     */
+    @Volatile
+    var lockSuppressed: Boolean = false
+}

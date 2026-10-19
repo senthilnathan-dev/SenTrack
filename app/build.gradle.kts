@@ -37,6 +37,10 @@ android {
 }
 
 dependencies {
+    implementation(project(":core-security"))
+    implementation(libs.androidx.fragment)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.process)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
