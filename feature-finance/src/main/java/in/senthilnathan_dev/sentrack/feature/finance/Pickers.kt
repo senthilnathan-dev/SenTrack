@@ -34,8 +34,8 @@ internal fun <T> PickerField(
     label: String,
     selectedText: String,
     options: List<Pair<String, T>>,
-    onSelect: (T) -> Unit,
     enabled: Boolean = true,
+    onSelect: (T) -> Unit,
 ) {
     var open by remember { mutableStateOf(false) }
     Column(modifier = Modifier.fillMaxWidth()) {
