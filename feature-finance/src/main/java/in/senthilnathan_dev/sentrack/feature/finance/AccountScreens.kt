@@ -4,7 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
@@ -32,47 +32,31 @@ import `in`.senthilnathan_dev.sentrack.core.ui.PrimaryButton
 import `in`.senthilnathan_dev.sentrack.core.ui.SecondaryButton
 import `in`.senthilnathan_dev.sentrack.core.ui.Section
 
-/** Finance home (for now): net worth and the list of accounts, grouped into spendable money and investments. */
+/** The Accounts section: your accounts grouped into spendable money and investments, with totals. */
 @Composable
-internal fun AccountsOverview(
+internal fun ColumnScope.AccountsContent(
     summaries: List<AccountSummary>,
     onAdd: () -> Unit,
     onOpen: (String) -> Unit,
-    topActions: @Composable RowScope.() -> Unit,
 ) {
     val active = summaries.filterNot { it.account.archived }
     val archived = summaries.filter { it.account.archived }
     val liquid = active.filterNot { it.account.kind.isInvestment }
     val investments = active.filter { it.account.kind.isInvestment }
 
-    AppScreen("Finance", actions = topActions) {
-        Section("Net worth") {
-            Text(Money.format(FinanceCalculator.netWorthPaise(summaries)), style = MaterialTheme.typography.headlineLarge)
-            Text(
-                "Spendable ${Money.format(FinanceCalculator.liquidPaise(summaries))} · Invested ${Money.format(FinanceCalculator.investedNowPaise(summaries))}",
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            Text(
-                "Investments are counted at the amount you put in, because SenTrack does not track live prices.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-
-        if (active.isEmpty()) {
-            Section("Get started", "Add the places your money sits: a bank account, cash, a wallet, PF, each mutual fund, gold, FD or RD.") {}
-        } else {
-            if (liquid.isNotEmpty()) AccountGroup("Spendable money", liquid, onOpen)
-            if (investments.isNotEmpty()) AccountGroup("Investments", investments, onOpen)
-        }
-        PrimaryButton("Add account", onClick = onAdd)
-        if (archived.isNotEmpty()) AccountGroup("Archived", archived, onOpen)
+    if (active.isEmpty()) {
+        Section("Get started", "Add the places your money sits: a bank account, cash, a wallet, PF, each mutual fund, gold, FD or RD.") {}
+    } else {
+        if (liquid.isNotEmpty()) AccountGroup("Spendable money", liquid, FinanceCalculator.liquidPaise(summaries), onOpen)
+        if (investments.isNotEmpty()) AccountGroup("Investments", investments, FinanceCalculator.investedNowPaise(summaries), onOpen)
     }
+    PrimaryButton("Add account", onClick = onAdd)
+    if (archived.isNotEmpty()) AccountGroup("Archived", archived, null, onOpen)
 }
 
 @Composable
-private fun AccountGroup(title: String, items: List<AccountSummary>, onOpen: (String) -> Unit) {
-    Section(title) {
+private fun AccountGroup(title: String, items: List<AccountSummary>, totalPaise: Long?, onOpen: (String) -> Unit) {
+    Section(title, if (totalPaise != null) "Total ${Money.format(totalPaise)}" else null) {
         items.forEachIndexed { index, s ->
             if (index > 0) HorizontalDivider()
             AccountRow(s, onClick = { onOpen(s.account.id) })

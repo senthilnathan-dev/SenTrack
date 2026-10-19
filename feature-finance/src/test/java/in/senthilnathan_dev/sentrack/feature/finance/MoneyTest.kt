@@ -32,6 +32,17 @@ class MoneyTest {
     }
 
     @Test
+    fun short_isCompactForCharts() {
+        assertEquals("₹0", Money.short(0))
+        assertEquals("₹950", Money.short(95_000))
+        assertEquals("₹1.5K", Money.short(150_000))
+        assertEquals("₹1L", Money.short(10_000_000))
+        assertEquals("₹2.5L", Money.short(25_000_000))
+        assertEquals("₹1.25Cr", Money.short(1_250_000_000))
+        assertEquals("-₹1.5K", Money.short(-150_000))
+    }
+
+    @Test
     fun parse_acceptsWhatPeopleType() {
         assertEquals(150_000L, Money.parse("1500"))
         assertEquals(150_050L, Money.parse("1,500.50"))

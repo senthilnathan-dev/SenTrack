@@ -21,6 +21,22 @@ object Money {
         return (if (negative) "-" else "") + (if (withSymbol) SYMBOL else "") + body
     }
 
+    /** Compact form for chart labels: ₹950, ₹1.5K, ₹2.5L (lakh), ₹1.25Cr (crore). */
+    fun short(paise: Long): String {
+        val negative = paise < 0
+        val rupees = kotlin.math.abs(paise) / 100.0
+        val text = when {
+            rupees >= 1_00_00_000 -> trim(rupees / 1_00_00_000) + "Cr"
+            rupees >= 1_00_000 -> trim(rupees / 1_00_000) + "L"
+            rupees >= 1_000 -> trim(rupees / 1_000) + "K"
+            else -> trim(rupees)
+        }
+        return (if (negative) "-" else "") + SYMBOL + text
+    }
+
+    /** Up to two decimals, trailing zeros removed ("1.50" -> "1.5", "2.00" -> "2"). */
+    private fun trim(value: Double): String = "%.2f".format(java.util.Locale.ENGLISH, value).trimEnd('0').trimEnd('.')
+
     /** Like [format] but with an explicit "+" for positive amounts (for gains). */
     fun formatSigned(paise: Long): String = (if (paise > 0) "+" else "") + format(paise)
 

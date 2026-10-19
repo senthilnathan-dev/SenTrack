@@ -1,28 +1,49 @@
 package `in`.senthilnathan_dev.sentrack.feature.finance
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import `in`.senthilnathan_dev.sentrack.core.data.finance.FinanceRepository
+import `in`.senthilnathan_dev.sentrack.core.data.finance.TxType
+import `in`.senthilnathan_dev.sentrack.core.ui.AppScreen
+import `in`.senthilnathan_dev.sentrack.core.ui.SecondaryButton
 import kotlinx.coroutines.launch
 
 /** Where the user is inside the Finance tab. */
 internal sealed interface FinanceRoute {
-    data object Overview : FinanceRoute
+    data object Home : FinanceRoute
     data object NewAccount : FinanceRoute
     data class EditAccount(val id: String) : FinanceRoute
+    data class AccountDetail(val id: String) : FinanceRoute
+    data class Entry(val txId: String?, val type: TxType = TxType.EXPENSE, val accountId: String? = null) : FinanceRoute
+    data class Split(val fromId: String?) : FinanceRoute
+    data object Categories : FinanceRoute
 }
 
+private enum class FinanceSection(val label: String) { DASHBOARD("Dashboard"), ACCOUNTS("Accounts"), ACTIVITY("Activity") }
+
 /**
- * The Finance tab. It owns its own small navigation stack (the system Back button steps back through it) and reads
- * data straight from [FinanceRepository] while it is on screen.
+ * The Finance tab. It lands on the Dashboard, with Accounts and Activity one tap away and an "Add entry" button
+ * always at hand. It keeps its own back stack (the system Back button steps back through it) and reads data
+ * straight from [FinanceRepository] while it is on screen.
  *
  * @param topActions buttons the app shell wants in the top bar (Settings, Lock).
  */
@@ -34,41 +55,134 @@ fun FinanceTab(repo: FinanceRepository, topActions: @Composable RowScope.() -> U
     // Created once per time the tab enters the screen: they stop when it leaves (for example when the vault locks).
     val accounts by remember(repo) { repo.accounts() }.collectAsState(initial = emptyList())
     val transactions by remember(repo) { repo.transactions() }.collectAsState(initial = emptyList())
+    val categories by remember(repo) { repo.categories() }.collectAsState(initial = emptyList())
     val summaries = remember(accounts, transactions) { FinanceCalculator.summarize(accounts, transactions) }
+    val accountMap = remember(accounts) { accounts.associateBy { it.id } }
+    val categoryMap = remember(categories) { categories.associateBy { it.id } }
 
-    var route by remember { mutableStateOf<FinanceRoute>(FinanceRoute.Overview) }
-    BackHandler(enabled = route != FinanceRoute.Overview) { route = FinanceRoute.Overview }
+    var section by rememberSaveable { mutableStateOf(FinanceSection.DASHBOARD) }
+    val stack = remember { mutableStateListOf<FinanceRoute>(FinanceRoute.Home) }
+    val route = stack.last()
+    fun open(r: FinanceRoute) { stack.add(r) }
+    fun back() { if (stack.size > 1) stack.removeAt(stack.lastIndex) }
+    fun home() { stack.clear(); stack.add(FinanceRoute.Home) }
+    BackHandler(enabled = stack.size > 1) { back() }
 
-    when (val current = route) {
-        FinanceRoute.Overview -> AccountsOverview(
-            summaries = summaries,
-            onAdd = { route = FinanceRoute.NewAccount },
-            onOpen = { route = FinanceRoute.EditAccount(it) },
-            topActions = topActions,
-        )
+    when (route) {
+        FinanceRoute.Home -> AppScreen(
+            "Finance",
+            actions = topActions,
+            floatingActionButton = {
+                ExtendedFloatingActionButton(onClick = { open(FinanceRoute.Entry(null)) }) { Text("+ Add entry") }
+            },
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FinanceSection.entries.forEach { s ->
+                    FilterChip(selected = section == s, onClick = { section = s }, label = { Text(s.label) })
+                }
+            }
+            when (section) {
+                FinanceSection.DASHBOARD -> DashboardContent(
+                    summaries = summaries,
+                    transactions = transactions,
+                    categories = categoryMap,
+                    onAddAccount = { open(FinanceRoute.NewAccount) },
+                    onSplit = { open(FinanceRoute.Split(null)) },
+                )
+                FinanceSection.ACCOUNTS -> {
+                    AccountsContent(
+                        summaries = summaries,
+                        onAdd = { open(FinanceRoute.NewAccount) },
+                        onOpen = { open(FinanceRoute.AccountDetail(it)) },
+                    )
+                    SecondaryButton("Manage categories", onClick = { open(FinanceRoute.Categories) })
+                }
+                FinanceSection.ACTIVITY -> ActivityContent(
+                    transactions = transactions,
+                    accounts = accountMap,
+                    categories = categoryMap,
+                    onOpen = { open(FinanceRoute.Entry(it)) },
+                )
+            }
+            Spacer(Modifier.height(72.dp))   // keeps the last card clear of the floating button
+        }
+
         FinanceRoute.NewAccount -> AccountEditor(
             existing = null,
             onSave = { name, kind, opening, note ->
-                scope.launch { repo.addAccount(name, kind, opening, note); route = FinanceRoute.Overview }
+                scope.launch { repo.addAccount(name, kind, opening, note); back() }
             },
             onToggleArchive = {},
-            onBack = { route = FinanceRoute.Overview },
+            onBack = ::back,
         )
+
         is FinanceRoute.EditAccount -> {
-            val account = accounts.firstOrNull { it.id == current.id }
-            if (account == null) route = FinanceRoute.Overview else AccountEditor(
+            val account = accounts.firstOrNull { it.id == route.id }
+            if (account == null) back() else AccountEditor(
                 existing = account,
                 onSave = { name, _, opening, note ->
                     scope.launch {
                         repo.updateAccount(account.copy(name = name, openingBalancePaise = opening, note = note?.ifBlank { null }))
-                        route = FinanceRoute.Overview
+                        back()
                     }
                 },
-                onToggleArchive = {
-                    scope.launch { repo.setAccountArchived(account.id, !account.archived); route = FinanceRoute.Overview }
-                },
-                onBack = { route = FinanceRoute.Overview },
+                onToggleArchive = { scope.launch { repo.setAccountArchived(account.id, !account.archived); home() } },
+                onBack = ::back,
             )
         }
+
+        is FinanceRoute.AccountDetail -> {
+            val summary = summaries.firstOrNull { it.account.id == route.id }
+            if (summary == null) back() else AccountDetailScreen(
+                summary = summary,
+                transactions = transactions,
+                accounts = accountMap,
+                categories = categoryMap,
+                onAddEntry = {
+                    open(FinanceRoute.Entry(null, if (summary.account.kind.isInvestment) TxType.INVEST else TxType.EXPENSE, summary.account.id))
+                },
+                onEdit = { open(FinanceRoute.EditAccount(summary.account.id)) },
+                onOpenTx = { open(FinanceRoute.Entry(it)) },
+                onBack = ::back,
+            )
+        }
+
+        is FinanceRoute.Entry -> {
+            val existing = route.txId?.let { id -> transactions.firstOrNull { it.id == id } }
+            val deleteExisting: (() -> Unit)? = if (existing == null) null else fun() {
+                scope.launch { repo.deleteTransaction(existing.id); back() }
+            }
+            if (route.txId != null && existing == null) back() else EntryScreen(
+                existing = existing,
+                initialType = route.type,
+                initialAccountId = route.accountId,
+                summaries = summaries,
+                categories = categories,
+                onSave = { tx, thenSplit ->
+                    scope.launch {
+                        repo.saveTransaction(tx)
+                        back()
+                        if (thenSplit) open(FinanceRoute.Split(tx.accountId))
+                    }
+                },
+                onDelete = deleteExisting,
+                onAddCategory = { name, type -> scope.launch { repo.addCategory(name, type) } },
+                onBack = ::back,
+            )
+        }
+
+        is FinanceRoute.Split -> SplitScreen(
+            summaries = summaries,
+            initialFromId = route.fromId,
+            onSave = { txs -> scope.launch { txs.forEach { repo.saveTransaction(it) }; back() } },
+            onBack = ::back,
+        )
+
+        FinanceRoute.Categories -> CategoriesScreen(
+            categories = categories,
+            onAdd = { name, type -> scope.launch { repo.addCategory(name, type) } },
+            onToggleArchive = { c -> scope.launch { repo.saveCategory(c.copy(archived = !c.archived)) } },
+            onBack = ::back,
+        )
     }
 }
