@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Fingerprint
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
@@ -32,6 +33,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import `in`.senthilnathan_dev.sentrack.security.SecuritySettings
 import `in`.senthilnathan_dev.sentrack.core.ui.AppScreen
+import `in`.senthilnathan_dev.sentrack.ui.about.AboutHost
 import `in`.senthilnathan_dev.sentrack.core.ui.CenteredScreen
 import `in`.senthilnathan_dev.sentrack.core.ui.ChoiceRow
 import `in`.senthilnathan_dev.sentrack.core.ui.Message
@@ -166,6 +168,11 @@ fun SecuritySettingsScreen(
     onOpenBackup: () -> Unit,
     onBack: () -> Unit,
 ) {
+    var showAbout by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+    if (showAbout) {
+        AboutHost(onBack = { showAbout = false })
+        return
+    }
     AppScreen("Settings", onBack = onBack) {
         Message(state.info, MessageKind.SUCCESS)
         Message(state.error, MessageKind.ERROR)
@@ -199,6 +206,10 @@ fun SecuritySettingsScreen(
 
         Section("Backup") {
             NavRow("Backup to Google Drive", "Account, automatic schedule and restore", onOpenBackup, Icons.Filled.CloudUpload)
+        }
+
+        Section("About") {
+            NavRow("About SenTrack", "Version, privacy policy, terms, licenses", { showAbout = true }, Icons.Filled.Info)
         }
     }
 }
