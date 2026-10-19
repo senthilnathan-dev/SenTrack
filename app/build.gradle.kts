@@ -45,6 +45,7 @@ dependencies {
     implementation(project(":core-alerts"))
     implementation(project(":feature-reminders"))
     implementation(project(":feature-personal"))
+    implementation(project(":feature-work"))
     implementation(libs.play.services.auth)
     implementation(libs.androidx.work.runtime)
     implementation(libs.androidx.fragment)

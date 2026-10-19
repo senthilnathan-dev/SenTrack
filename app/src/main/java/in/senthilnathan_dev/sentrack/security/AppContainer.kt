@@ -15,6 +15,7 @@ import `in`.senthilnathan_dev.sentrack.core.data.DatabaseHolder
 import `in`.senthilnathan_dev.sentrack.core.data.finance.FinanceRepository
 import `in`.senthilnathan_dev.sentrack.core.data.personal.HabitRepository
 import `in`.senthilnathan_dev.sentrack.core.data.personal.LifeRepository
+import `in`.senthilnathan_dev.sentrack.core.data.work.WorkRepository
 import `in`.senthilnathan_dev.sentrack.core.data.personal.NoteRepository
 import `in`.senthilnathan_dev.sentrack.core.security.biometric.BiometricUnlock
 import `in`.senthilnathan_dev.sentrack.core.security.vault.FileVault
@@ -63,6 +64,7 @@ class AppContainer(app: Application) {
     /** Habits and their day-by-day logs. */
     val habits = HabitRepository(database)
     val life = LifeRepository(database)
+    val work = WorkRepository(database)
 
     /** Encrypted attachment store. Lives in `noBackupFilesDir`, like the vault header. */
     val files = FileVault(File(app.noBackupFilesDir, "vault_files"), session)
