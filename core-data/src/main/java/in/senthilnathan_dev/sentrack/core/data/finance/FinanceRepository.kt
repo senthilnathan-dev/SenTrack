@@ -77,6 +77,20 @@ class FinanceRepository(private val holder: DatabaseHolder) {
         if (monthlyLimitPaise <= 0) dao().deleteBudget(categoryId) else dao().upsertBudget(BudgetEntity(categoryId, monthlyLimitPaise))
     }
 
+    // ---- Tax filing vault
+
+    fun taxFilings(): Flow<List<TaxFilingEntity>> = dao().observeTaxFilings()
+    fun taxDocuments(): Flow<List<TaxDocumentEntity>> = dao().observeTaxDocuments()
+
+    suspend fun saveTaxFiling(filing: TaxFilingEntity) = dao().upsertTaxFiling(filing)
+
+    suspend fun saveTaxDocument(document: TaxDocumentEntity) = dao().upsertTaxDocument(document)
+
+    suspend fun taxDocument(id: String): TaxDocumentEntity? = dao().taxDocument(id)
+
+    /** Removes the document's record. The caller deletes the encrypted file from the vault afterwards. */
+    suspend fun deleteTaxDocument(id: String) = dao().deleteTaxDocument(id)
+
     suspend fun saveGoal(goal: GoalEntity, accountIds: Set<String>) {
         val dao = dao()
         dao.upsertGoal(goal)

@@ -84,6 +84,7 @@ class MainActivity : FragmentActivity() {
                         Stage.RECOVER -> RecoverScreen(state, vaultViewModel::recover, vaultViewModel::cancelRecover)
                         Stage.UNLOCKED -> UnlockedShell(
                             finance = (application as SenTrackApp).container.finance,
+                            files = (application as SenTrackApp).container.files,
                             onLock = vaultViewModel::lock,
                             onOpenSettings = vaultViewModel::openSettings,
                         )

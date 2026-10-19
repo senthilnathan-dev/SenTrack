@@ -24,7 +24,14 @@ class AppContainer(app: Application) {
     val database = DatabaseHolder(app, session)
     val settings = SecuritySettings(app)
 
-    /** Finance data access (accounts, transactions, budgets, goals). */
+    init {
+        // Short-lived readable copies (PDF previews) must never outlive the unlocked session or the process.
+        val viewing = File(app.cacheDir, "viewing")
+        viewing.deleteRecursively()
+        session.addListener { unlocked -> if (!unlocked) viewing.deleteRecursively() }
+    }
+
+    /** Finance data access (accounts, transactions, budgets, goals, tax filings). */
     val finance = FinanceRepository(database)
 
     /** Encrypted attachment store. Lives in `noBackupFilesDir`, like the vault header. */

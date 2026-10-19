@@ -24,5 +24,8 @@ Net worth + 6-month trend; month selector with income, spent, invested, left-aft
 ## Plan tab (done)
 Budgets: monthly limit per expense category with progress (green, amber from 80%, red when over), unbudgeted-spend hint, dashboard card. Goals: target amount and optional date, linked to any accounts (bank, cash, wallet, FD, RD, gold...), progress from their balances/principal, monthly amount needed to reach the date, archive/restore.
 
+## Tax filing vault (done)
+Plan tab -> Tax filings: one record per financial year (status, filing date, acknowledgement number, tax paid, refund, note) with encrypted documents (Form 16, AIS/26AS, ITR, acknowledgement, computation, proofs, notices). Import via the system file picker straight into the encrypted file vault; names and details live in the encrypted database. In-app viewer (PDF pages, zoomable images) with a short-lived decrypted cache copy deleted on close and on lock; explicit "save a readable copy" export; delete needs typing DELETE. Documents are included in encrypted Drive backups (schema v3).
+
 ## Still to build
-Tax document vault, recurring entries (monthly PF/SIP) and reminders (Phase 7), optional current value per investment, overspending alerts (Phase 7).
+Recurring entries (monthly PF/SIP) and reminders (Phase 7), optional current value per investment, overspending alerts (Phase 7).

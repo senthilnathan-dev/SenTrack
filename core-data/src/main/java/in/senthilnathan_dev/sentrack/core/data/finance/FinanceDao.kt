@@ -74,4 +74,23 @@ interface FinanceDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertGoalAccounts(links: List<GoalAccountEntity>)
+
+    // ---- Tax filing vault
+    @Query("SELECT * FROM fin_tax_filing ORDER BY financialYearStart DESC")
+    fun observeTaxFilings(): Flow<List<TaxFilingEntity>>
+
+    @Upsert
+    suspend fun upsertTaxFiling(filing: TaxFilingEntity)
+
+    @Query("SELECT * FROM fin_tax_document ORDER BY addedAtMillis DESC")
+    fun observeTaxDocuments(): Flow<List<TaxDocumentEntity>>
+
+    @Query("SELECT * FROM fin_tax_document WHERE id = :id")
+    suspend fun taxDocument(id: String): TaxDocumentEntity?
+
+    @Upsert
+    suspend fun upsertTaxDocument(document: TaxDocumentEntity)
+
+    @Query("DELETE FROM fin_tax_document WHERE id = :id")
+    suspend fun deleteTaxDocument(id: String)
 }

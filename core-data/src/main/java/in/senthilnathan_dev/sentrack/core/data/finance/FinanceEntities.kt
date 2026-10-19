@@ -107,3 +107,56 @@ data class GoalAccountEntity(
     val goalId: String,
     val accountId: String,
 )
+
+// ---- Tax filing vault
+
+enum class TaxStatus(val label: String) {
+    NOT_STARTED("Not started"),
+    PREPARING("Preparing"),
+    FILED("Filed"),
+    VERIFIED("E-verified"),
+    REFUND_PENDING("Refund pending"),
+    COMPLETED("Completed"),
+}
+
+enum class TaxDocCategory(val label: String) {
+    FORM_16("Form 16"),
+    AIS_26AS("AIS / Form 26AS"),
+    ITR_FORM("ITR form"),
+    ACKNOWLEDGEMENT("Acknowledgement"),
+    COMPUTATION("Tax computation"),
+    INVESTMENT_PROOF("Investment proof"),
+    NOTICE("Notice or letter"),
+    OTHER("Other"),
+}
+
+/** One financial year's tax filing: where it stands, the key numbers, and a note. Documents attach to it. */
+@Entity(tableName = "fin_tax_filing", indices = [Index("financialYearStart")])
+data class TaxFilingEntity(
+    @PrimaryKey val id: String,
+    /** Starting calendar year of the Indian financial year (2026 means FY 2026-27, assessment year 2027-28). */
+    val financialYearStart: Int,
+    val status: TaxStatus,
+    val filedOnEpochDay: Long?,
+    val acknowledgementNumber: String?,
+    val taxPaidPaise: Long?,
+    val refundPaise: Long?,
+    val note: String?,
+    val createdAtMillis: Long,
+)
+
+/**
+ * A stored tax document. The file itself lives encrypted in the file vault under [vaultFileId]; this row keeps the
+ * display name and details, which are therefore protected by the database encryption too.
+ */
+@Entity(tableName = "fin_tax_document", indices = [Index("filingId")])
+data class TaxDocumentEntity(
+    @PrimaryKey val id: String,
+    val filingId: String,
+    val name: String,
+    val category: TaxDocCategory,
+    val mimeType: String,
+    val sizeBytes: Long,
+    val vaultFileId: String,
+    val addedAtMillis: Long,
+)

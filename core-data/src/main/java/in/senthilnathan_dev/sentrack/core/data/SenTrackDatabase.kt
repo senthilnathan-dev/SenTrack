@@ -14,6 +14,8 @@ import `in`.senthilnathan_dev.sentrack.core.data.finance.CategoryEntity
 import `in`.senthilnathan_dev.sentrack.core.data.finance.FinanceDao
 import `in`.senthilnathan_dev.sentrack.core.data.finance.GoalAccountEntity
 import `in`.senthilnathan_dev.sentrack.core.data.finance.GoalEntity
+import `in`.senthilnathan_dev.sentrack.core.data.finance.TaxDocumentEntity
+import `in`.senthilnathan_dev.sentrack.core.data.finance.TaxFilingEntity
 import `in`.senthilnathan_dev.sentrack.core.data.finance.TransactionEntity
 
 /** Simple key/value settings stored inside the encrypted database (counters, flags, versions). */
@@ -36,7 +38,7 @@ interface MetaDao {
  * The app's single encrypted database. Feature entities are added here phase by phase;
  * every schema change bumps [version] and ships a tested migration (schemas are exported).
  *
- * History: 1 = meta table. 2 = Finance tables (accounts, categories, transactions, budgets, goals).
+ * History: 1 = meta table. 2 = Finance tables (accounts, categories, transactions, budgets, goals). 3 = tax filings and documents.
  */
 @Database(
     entities = [
@@ -47,10 +49,12 @@ interface MetaDao {
         BudgetEntity::class,
         GoalEntity::class,
         GoalAccountEntity::class,
+        TaxFilingEntity::class,
+        TaxDocumentEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
-    autoMigrations = [AutoMigration(from = 1, to = 2)],
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)],
 )
 abstract class SenTrackDatabase : RoomDatabase() {
     abstract fun metaDao(): MetaDao

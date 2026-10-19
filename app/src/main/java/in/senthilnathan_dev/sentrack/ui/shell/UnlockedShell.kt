@@ -26,6 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import `in`.senthilnathan_dev.sentrack.core.data.finance.FinanceRepository
+import `in`.senthilnathan_dev.sentrack.core.security.vault.FileVault
 import `in`.senthilnathan_dev.sentrack.core.ui.AppScreen
 import `in`.senthilnathan_dev.sentrack.core.ui.IconAction
 import `in`.senthilnathan_dev.sentrack.core.ui.LocalBottomInsetHandled
@@ -44,7 +45,7 @@ private enum class Tab(val label: String, val icon: ImageVector) {
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun UnlockedShell(finance: FinanceRepository, onLock: () -> Unit, onOpenSettings: () -> Unit) {
+fun UnlockedShell(finance: FinanceRepository, files: FileVault, onLock: () -> Unit, onOpenSettings: () -> Unit) {
     var selected by rememberSaveable { mutableStateOf(Tab.FINANCE) }
     val topActions: @Composable RowScope.() -> Unit = {
         IconAction(Icons.Filled.Settings, "Settings", onOpenSettings)
@@ -74,7 +75,7 @@ fun UnlockedShell(finance: FinanceRepository, onLock: () -> Unit, onOpenSettings
         CompositionLocalProvider(LocalBottomInsetHandled provides true) {
             Box(modifier = Modifier.padding(padding)) {
                 when (selected) {
-                    Tab.FINANCE -> FinanceTab(finance, topActions)
+                    Tab.FINANCE -> FinanceTab(finance, files, topActions)
                     Tab.PERSONAL -> ComingSoon(
                         "Personal", topActions,
                         "Notes, habits, goals and bucket list, achievements, important dates and reminders.",

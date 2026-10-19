@@ -1,6 +1,9 @@
 package `in`.senthilnathan_dev.sentrack.feature.finance
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -35,6 +38,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import `in`.senthilnathan_dev.sentrack.core.data.finance.FinanceRepository
+import `in`.senthilnathan_dev.sentrack.core.data.finance.TaxDocCategory
+import `in`.senthilnathan_dev.sentrack.core.data.finance.TaxDocumentEntity
+import `in`.senthilnathan_dev.sentrack.core.security.vault.FileVault
 import `in`.senthilnathan_dev.sentrack.core.data.finance.TxType
 import `in`.senthilnathan_dev.sentrack.core.ui.AppScreen
 import `in`.senthilnathan_dev.sentrack.core.ui.SecondaryButton
@@ -54,6 +60,8 @@ internal sealed interface FinanceRoute {
     data object Categories : FinanceRoute
     data class GoalEditor(val id: String?) : FinanceRoute
     data object ArchivedGoals : FinanceRoute
+    data class Filing(val id: String) : FinanceRoute
+    data class Viewer(val docId: String) : FinanceRoute
 }
 
 private enum class FinanceSection(val label: String, val icon: ImageVector) {
@@ -72,7 +80,7 @@ private enum class FinanceSection(val label: String, val icon: ImageVector) {
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FinanceTab(repo: FinanceRepository, topActions: @Composable RowScope.() -> Unit) {
+fun FinanceTab(repo: FinanceRepository, files: FileVault, topActions: @Composable RowScope.() -> Unit) {
     val scope = rememberCoroutineScope()
     LaunchedEffect(repo) { repo.ensureDefaults() }
 
@@ -83,6 +91,8 @@ fun FinanceTab(repo: FinanceRepository, topActions: @Composable RowScope.() -> U
     val budgets by remember(repo) { repo.budgets() }.collectAsState(initial = emptyList())
     val goals by remember(repo) { repo.goals() }.collectAsState(initial = emptyList())
     val goalLinks by remember(repo) { repo.goalAccounts() }.collectAsState(initial = emptyList())
+    val taxFilings by remember(repo) { repo.taxFilings() }.collectAsState(initial = emptyList())
+    val taxDocuments by remember(repo) { repo.taxDocuments() }.collectAsState(initial = emptyList())
     val summaries = remember(accounts, transactions) { FinanceCalculator.summarize(accounts, transactions) }
     val accountMap = remember(accounts) { accounts.associateBy { it.id } }
     val categoryMap = remember(categories) { categories.associateBy { it.id } }
@@ -91,6 +101,36 @@ fun FinanceTab(repo: FinanceRepository, topActions: @Composable RowScope.() -> U
         goals.map { FinanceCalculator.goalProgress(it, linkedByGoal[it.id] ?: emptySet(), summaries, LocalDate.now()) }
     }
     val thisMonth = remember(transactions) { YearMonth.now().let { FinanceCalculator.monthSummary(transactions, it.year, it.monthValue) } }
+
+    // ---- Tax documents: import from the phone, save a readable copy, with progress and result messages.
+    val context = LocalContext.current.applicationContext
+    val taxService = remember(repo, files) { TaxDocumentService(context, repo, files) }
+    var importing by remember { mutableStateOf(false) }
+    var taxNotice by remember { mutableStateOf<String?>(null) }
+    var taxProblem by remember { mutableStateOf<String?>(null) }
+    var importTarget by remember { mutableStateOf<Pair<String, TaxDocCategory>?>(null) }   // filing id + document type
+    var exportingDoc by remember { mutableStateOf<TaxDocumentEntity?>(null) }
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+        val target = importTarget
+        if (target != null && uris.isNotEmpty()) {
+            scope.launch {
+                importing = true; taxNotice = null; taxProblem = null
+                val result = taxService.importFiles(target.first, target.second, uris)
+                importing = false
+                if (result.imported > 0) taxNotice = "Added ${result.imported} document(s), encrypted."
+                if (result.failed.isNotEmpty()) taxProblem = "Could not add: " + result.failed.joinToString(", ")
+            }
+        }
+    }
+    val exporter = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
+        val doc = exportingDoc
+        if (uri != null && doc != null) {
+            scope.launch {
+                taxNotice = null; taxProblem = null
+                if (taxService.export(doc, uri)) taxNotice = "Saved a readable copy of ${doc.name}." else taxProblem = "Could not save the copy."
+            }
+        }
+    }
 
     var section by rememberSaveable { mutableStateOf(FinanceSection.DASHBOARD) }
     val stack = remember { mutableStateListOf<FinanceRoute>(FinanceRoute.Home) }
@@ -151,7 +191,8 @@ fun FinanceTab(repo: FinanceRepository, topActions: @Composable RowScope.() -> U
                     categories = categoryMap,
                     onOpen = { open(FinanceRoute.Entry(it)) },
                 )
-                FinanceSection.PLAN -> PlanContent(
+                FinanceSection.PLAN -> {
+                PlanContent(
                     budgets = budgets,
                     categories = categories,
                     month = thisMonth,
@@ -161,6 +202,20 @@ fun FinanceTab(repo: FinanceRepository, topActions: @Composable RowScope.() -> U
                     onOpenGoal = { open(FinanceRoute.GoalEditor(it)) },
                     onOpenArchivedGoals = { open(FinanceRoute.ArchivedGoals) },
                 )
+                TaxFilingsSection(
+                    filings = taxFilings,
+                    documents = taxDocuments,
+                    onOpen = { taxNotice = null; taxProblem = null; open(FinanceRoute.Filing(it)) },
+                    onAddYear = { year ->
+                        scope.launch {
+                            val filing = newFiling(year)
+                            repo.saveTaxFiling(filing)
+                            taxNotice = null; taxProblem = null
+                            open(FinanceRoute.Filing(filing.id))
+                        }
+                    },
+                )
+                }
             }
             Spacer(Modifier.height(72.dp))   // keeps the last card clear of the floating button
         }
@@ -264,6 +319,42 @@ fun FinanceTab(repo: FinanceRepository, topActions: @Composable RowScope.() -> U
                     onBack = ::back,
                 )
             }
+        }
+
+        is FinanceRoute.Filing -> {
+            val filing = taxFilings.firstOrNull { it.id == route.id }
+            if (filing == null) back() else FilingDetailScreen(
+                filing = filing,
+                documents = taxDocuments.filter { it.filingId == filing.id },
+                importing = importing,
+                notice = taxNotice,
+                problem = taxProblem,
+                onSave = { updated -> scope.launch { repo.saveTaxFiling(updated); taxNotice = "Details saved." } },
+                onPickDocuments = { category ->
+                    importTarget = filing.id to category
+                    picker.launch(arrayOf("*/*"))
+                },
+                onOpenDocument = { open(FinanceRoute.Viewer(it)) },
+                onExportDocument = { doc -> exportingDoc = doc; exporter.launch(doc.name) },
+                onDeleteDocument = { doc ->
+                    scope.launch {
+                        taxService.delete(doc)
+                        taxNotice = "Deleted ${doc.name}."
+                    }
+                },
+                onBack = ::back,
+            )
+        }
+
+        is FinanceRoute.Viewer -> {
+            val doc = taxDocuments.firstOrNull { it.id == route.docId }
+            if (doc == null) back() else DocumentViewerScreen(
+                doc = doc,
+                service = taxService,
+                files = files,
+                onExport = { exportingDoc = doc; exporter.launch(doc.name) },
+                onBack = ::back,
+            )
         }
 
         FinanceRoute.ArchivedGoals -> ArchivedGoalsScreen(
