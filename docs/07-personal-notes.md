@@ -25,3 +25,11 @@ Habits, plans / goals / wishlist / bucket list, achievements, important dates (u
 - Lists continue on Enter and end on an empty item (`EditAssist.continueList`, tested)
 - Word suggestions from the user's own notes, shown above the toolbar; computed on the phone only (`EditAssist`, tested)
 - Standard keyboard options (sentence capitals, autocorrect). Note: some keyboards suppress their own suggestions in windows that block screenshots (`FLAG_SECURE`, which SenTrack sets everywhere); the in-app suggestions cover that
+
+## Habits (step 2)
+- Periods: daily (optionally only chosen weekdays), weekly, monthly, quarterly, yearly. Goal: done / not done N times per period, or a number (glasses, pages, km) per period
+- Today list with progress bars, one-tap tick, streak flame; step back to fill in a missed day
+- Detail: current and best streak, success rate over recent finished periods, periods met, a 12-week calendar (tap a day to change it) or per-period bars
+- Streak rules: the period still in progress never breaks a streak; unscheduled days are skipped; tracking starts at the habit's start date (`HabitEngine`, tested)
+- Reminders for daily and weekly habits through the shared reminders engine (reminder id `habit-<id>`); archiving pauses it, restoring resumes it
+- Schema v7: `habit`, `habit_log` (one row per habit per day)

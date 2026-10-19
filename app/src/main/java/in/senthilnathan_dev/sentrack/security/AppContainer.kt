@@ -13,6 +13,7 @@ import `in`.senthilnathan_dev.sentrack.backup.BackupSettings
 import `in`.senthilnathan_dev.sentrack.backup.DriveAuthorizer
 import `in`.senthilnathan_dev.sentrack.core.data.DatabaseHolder
 import `in`.senthilnathan_dev.sentrack.core.data.finance.FinanceRepository
+import `in`.senthilnathan_dev.sentrack.core.data.personal.HabitRepository
 import `in`.senthilnathan_dev.sentrack.core.data.personal.NoteRepository
 import `in`.senthilnathan_dev.sentrack.core.security.biometric.BiometricUnlock
 import `in`.senthilnathan_dev.sentrack.core.security.vault.FileVault
@@ -57,6 +58,9 @@ class AppContainer(app: Application) {
 
     /** Notes, folders, tags and attachment records. */
     val notes = NoteRepository(database)
+
+    /** Habits and their day-by-day logs. */
+    val habits = HabitRepository(database)
 
     /** Encrypted attachment store. Lives in `noBackupFilesDir`, like the vault header. */
     val files = FileVault(File(app.noBackupFilesDir, "vault_files"), session)

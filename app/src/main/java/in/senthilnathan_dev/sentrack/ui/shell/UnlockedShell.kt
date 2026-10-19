@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import `in`.senthilnathan_dev.sentrack.core.alerts.ReminderCenter
 import `in`.senthilnathan_dev.sentrack.core.alerts.ReminderRepository
 import `in`.senthilnathan_dev.sentrack.core.data.finance.FinanceRepository
+import `in`.senthilnathan_dev.sentrack.core.data.personal.HabitRepository
 import `in`.senthilnathan_dev.sentrack.core.data.personal.NoteRepository
 import `in`.senthilnathan_dev.sentrack.core.security.vault.FileVault
 import `in`.senthilnathan_dev.sentrack.core.ui.AppScreen
@@ -56,6 +57,7 @@ fun UnlockedShell(
     finance: FinanceRepository,
     files: FileVault,
     notes: NoteRepository,
+    habits: HabitRepository,
     reminders: ReminderRepository,
     reminderCenter: ReminderCenter,
     onLock: () -> Unit,
@@ -98,7 +100,7 @@ fun UnlockedShell(
                 }
                 when (selected) {
                     Tab.FINANCE -> FinanceTab(finance, files, topActions)
-                    Tab.PERSONAL -> PersonalTab(notes, files, topActions)
+                    Tab.PERSONAL -> PersonalTab(notes, habits, reminders, files, topActions)
                     Tab.WORK -> ComingSoon(
                         "Work", topActions,
                         "Punch in and out, leave calendar, tasks and appreciation, plus career tracking and your workspace of apps and sites.",

@@ -88,6 +88,7 @@ class MainActivity : FragmentActivity() {
                             finance = (application as SenTrackApp).container.finance,
                             files = (application as SenTrackApp).container.files,
                             notes = (application as SenTrackApp).container.notes,
+                            habits = (application as SenTrackApp).container.habits,
                             reminders = (application as SenTrackApp).container.reminders,
                             reminderCenter = (application as SenTrackApp).container.reminderCenter,
                             onExternalFlow = { (application as SenTrackApp).container.beginExternalFlow() },

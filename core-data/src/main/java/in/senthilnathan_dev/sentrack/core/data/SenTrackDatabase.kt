@@ -17,6 +17,9 @@ import `in`.senthilnathan_dev.sentrack.core.data.finance.GoalEntity
 import `in`.senthilnathan_dev.sentrack.core.data.finance.TaxDocumentEntity
 import `in`.senthilnathan_dev.sentrack.core.data.finance.TaxFilingEntity
 import `in`.senthilnathan_dev.sentrack.core.data.finance.TransactionEntity
+import `in`.senthilnathan_dev.sentrack.core.data.personal.HabitDao
+import `in`.senthilnathan_dev.sentrack.core.data.personal.HabitEntity
+import `in`.senthilnathan_dev.sentrack.core.data.personal.HabitLogEntity
 import `in`.senthilnathan_dev.sentrack.core.data.personal.NoteAttachmentEntity
 import `in`.senthilnathan_dev.sentrack.core.data.personal.NoteDao
 import `in`.senthilnathan_dev.sentrack.core.data.personal.NoteEntity
@@ -47,7 +50,7 @@ interface MetaDao {
  * every schema change bumps [version] and ships a tested migration (schemas are exported).
  *
  * History: 1 = meta table. 2 = Finance tables. 3 = tax filings and documents. 4 = tax-year archive flag (never shipped
- * on its own). 5 = reminders. 6 = notes (folders, tags, attachments). Version 4 was folded into the 3 to 5 auto-migration, so there is no 4.json schema file.
+ * on its own). 5 = reminders. 6 = notes (folders, tags, attachments). 7 = habits and habit logs. Version 4 was folded into the 3 to 5 auto-migration, so there is no 4.json schema file.
  */
 @Database(
     entities = [
@@ -66,14 +69,17 @@ interface MetaDao {
         NoteTagEntity::class,
         NoteTagLinkEntity::class,
         NoteAttachmentEntity::class,
+        HabitEntity::class,
+        HabitLogEntity::class,
     ],
-    version = 6,
+    version = 7,
     exportSchema = true,
-    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3), AutoMigration(from = 3, to = 5), AutoMigration(from = 5, to = 6)],
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3), AutoMigration(from = 3, to = 5), AutoMigration(from = 5, to = 6), AutoMigration(from = 6, to = 7)],
 )
 abstract class SenTrackDatabase : RoomDatabase() {
     abstract fun metaDao(): MetaDao
     abstract fun financeDao(): FinanceDao
     abstract fun reminderDao(): ReminderDao
     abstract fun noteDao(): NoteDao
+    abstract fun habitDao(): HabitDao
 }
