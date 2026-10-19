@@ -97,8 +97,11 @@ fun LockScreen(
     onUnlock: (String) -> Unit,
     onBiometric: () -> Unit,
     onForgot: () -> Unit,
+    onShown: () -> Unit,
 ) {
     var pass by remember { mutableStateOf("") }
+    // Re-check on every appearance so the biometric button never shows when it cannot work.
+    LaunchedEffect(Unit) { onShown() }
     CenteredScreen {
         Text("SenTrack is locked", style = MaterialTheme.typography.headlineMedium)
         Message(state.info, MessageKind.SUCCESS)

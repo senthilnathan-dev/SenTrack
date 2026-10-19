@@ -77,6 +77,7 @@ class MainActivity : FragmentActivity() {
                             onUnlock = vaultViewModel::unlock,
                             onBiometric = { vaultViewModel.unlockWithBiometrics(this@MainActivity) },
                             onForgot = vaultViewModel::showRecover,
+                            onShown = vaultViewModel::refreshBiometricState,
                         )
                         Stage.RECOVER -> RecoverScreen(state, vaultViewModel::recover, vaultViewModel::cancelRecover)
                         Stage.UNLOCKED -> UnlockedHome(

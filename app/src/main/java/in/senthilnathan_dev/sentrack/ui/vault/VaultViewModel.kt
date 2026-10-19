@@ -177,6 +177,14 @@ class VaultViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Re-checks whether biometric unlock is usable; called whenever the lock screen appears. */
+    fun refreshBiometricState() = _state.update {
+        it.copy(
+            biometricAvailable = biometric.isAvailable(),
+            biometricEnabled = vault.exists() && biometric.isEnabled(),
+        )
+    }
+
     fun showRecover() = _state.update { stateFor(Stage.RECOVER) }
 
     fun cancelRecover() = _state.update { stateFor(Stage.LOCKED) }

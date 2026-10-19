@@ -42,7 +42,15 @@ class BiometricUnlock(private val context: Context, private val vault: VaultMana
     fun isAvailable(): Boolean =
         BiometricManager.from(context).canAuthenticate(BIOMETRIC_STRONG) == BiometricManager.BIOMETRIC_SUCCESS
 
-    fun isEnabled(): Boolean = vault.biometricBlob() != null
+    /**
+     * True only when biometric unlock can really work: a slot in the current format exists AND the Keystore key it
+     * names is still present. A leftover or orphaned slot counts as "not enabled", so the UI never offers a button
+     * that cannot succeed.
+     */
+    fun isEnabled(): Boolean {
+        val blob = BiometricBlob.parse(vault.biometricBlob()) ?: return false
+        return runCatching { keyStore().containsAlias(blob.keyAlias) }.getOrDefault(false)
+    }
 
     /** Wraps the unlocked vault's DEK under a new biometric-bound key. Vault must be unlocked. */
     fun enable(activity: FragmentActivity, onResult: (Result<Unit>) -> Unit) {
