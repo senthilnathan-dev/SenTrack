@@ -40,7 +40,8 @@ interface MetaDao {
  * The app's single encrypted database. Feature entities are added here phase by phase;
  * every schema change bumps [version] and ships a tested migration (schemas are exported).
  *
- * History: 1 = meta table. 2 = Finance tables (accounts, categories, transactions, budgets, goals). 3 = tax filings and documents.
+ * History: 1 = meta table. 2 = Finance tables. 3 = tax filings and documents. 4 = tax-year archive flag (never shipped
+ * on its own). 5 = reminders. Version 4 was folded into the 3 to 5 auto-migration, so there is no 4.json schema file.
  */
 @Database(
     entities = [
@@ -57,7 +58,7 @@ interface MetaDao {
     ],
     version = 5,
     exportSchema = true,
-    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3), AutoMigration(from = 3, to = 4), AutoMigration(from = 4, to = 5)],
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3), AutoMigration(from = 3, to = 5)],
 )
 abstract class SenTrackDatabase : RoomDatabase() {
     abstract fun metaDao(): MetaDao
