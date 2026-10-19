@@ -10,6 +10,7 @@ import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -64,7 +65,8 @@ class MainActivity : FragmentActivity() {
         enableEdgeToEdge()
         setContent {
             SenTrackTheme {
-                Surface(modifier = Modifier.fillMaxSize()) {
+                // The keyboard inset is applied once, here: the whole screen shrinks above the keyboard (no double spacing).
+                Surface(modifier = Modifier.fillMaxSize().imePadding()) {
                     val state by vaultViewModel.state.collectAsState()
                     when (state.stage) {
                         Stage.SETUP -> SetupScreen(state, vaultViewModel::createVault, vaultViewModel::openBackup)

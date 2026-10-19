@@ -2,7 +2,9 @@ package `in`.senthilnathan_dev.sentrack.ui.shell
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
@@ -40,6 +42,7 @@ private enum class Tab(val label: String, val icon: ImageVector) {
  * The unlocked app: one tab per life area, with Settings and Lock always one tap away.
  * Each tab owns its own screens and Back handling.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun UnlockedShell(finance: FinanceRepository, onLock: () -> Unit, onOpenSettings: () -> Unit) {
     var selected by rememberSaveable { mutableStateOf(Tab.FINANCE) }
@@ -52,14 +55,17 @@ fun UnlockedShell(finance: FinanceRepository, onLock: () -> Unit, onOpenSettings
         // Each tab's own screen already handles the system bars at the top; only the bottom bar is added here.
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
-            NavigationBar {
-                Tab.entries.forEach { tab ->
-                    NavigationBarItem(
-                        selected = selected == tab,
-                        onClick = { selected = tab },
-                        icon = { Icon(tab.icon, contentDescription = null) },
-                        label = { Text(tab.label) },
-                    )
+            // While the keyboard is open the module bar steps aside, so the screen's own Save bar sits on the keyboard.
+            if (!WindowInsets.isImeVisible) {
+                NavigationBar {
+                    Tab.entries.forEach { tab ->
+                        NavigationBarItem(
+                            selected = selected == tab,
+                            onClick = { selected = tab },
+                            icon = { Icon(tab.icon, contentDescription = null) },
+                            label = { Text(tab.label) },
+                        )
+                    }
                 }
             }
         },
