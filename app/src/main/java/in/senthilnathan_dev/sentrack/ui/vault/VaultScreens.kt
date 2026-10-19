@@ -23,17 +23,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import `in`.senthilnathan_dev.sentrack.security.SecuritySettings
-import `in`.senthilnathan_dev.sentrack.ui.components.AppScreen
-import `in`.senthilnathan_dev.sentrack.ui.components.CenteredScreen
-import `in`.senthilnathan_dev.sentrack.ui.components.ChoiceRow
-import `in`.senthilnathan_dev.sentrack.ui.components.Message
-import `in`.senthilnathan_dev.sentrack.ui.components.MessageKind
-import `in`.senthilnathan_dev.sentrack.ui.components.NavRow
-import `in`.senthilnathan_dev.sentrack.ui.components.PrimaryButton
-import `in`.senthilnathan_dev.sentrack.ui.components.SecondaryButton
-import `in`.senthilnathan_dev.sentrack.ui.components.SecretField
-import `in`.senthilnathan_dev.sentrack.ui.components.Section
-import `in`.senthilnathan_dev.sentrack.ui.components.SwitchRow
+import `in`.senthilnathan_dev.sentrack.core.ui.AppScreen
+import `in`.senthilnathan_dev.sentrack.core.ui.CenteredScreen
+import `in`.senthilnathan_dev.sentrack.core.ui.ChoiceRow
+import `in`.senthilnathan_dev.sentrack.core.ui.Message
+import `in`.senthilnathan_dev.sentrack.core.ui.MessageKind
+import `in`.senthilnathan_dev.sentrack.core.ui.NavRow
+import `in`.senthilnathan_dev.sentrack.core.ui.PrimaryButton
+import `in`.senthilnathan_dev.sentrack.core.ui.SecondaryButton
+import `in`.senthilnathan_dev.sentrack.core.ui.SecretField
+import `in`.senthilnathan_dev.sentrack.core.ui.Section
+import `in`.senthilnathan_dev.sentrack.core.ui.SwitchRow
 
 // ---- Sign-in style screens (centred, no top bar)
 
@@ -146,31 +146,6 @@ fun RecoverScreen(state: VaultUiState, onRecover: (String, String, String) -> Un
 }
 
 // ---- Screens inside the unlocked app (top bar + sections)
-
-/** Temporary Phase 1 home: proves unlock works. Replaced by the real dashboard in Phase 3+. */
-@Composable
-fun UnlockedHome(
-    state: VaultUiState,
-    onLock: () -> Unit,
-    onOpenSettings: () -> Unit,
-    onCheckDatabase: () -> Unit,
-) {
-    LaunchedEffect(Unit) { onCheckDatabase() }
-    AppScreen("SenTrack") {
-        Section("Status") {
-            Text("Your vault is unlocked. Finance, Personal and Work modules arrive in the next phases.")
-            Text(
-                "Encrypted database opened ${state.dbOpenCount ?: "…"} time(s).",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        Section("Quick actions") {
-            PrimaryButton("Lock now", onClick = onLock)
-            SecondaryButton("Settings", onClick = onOpenSettings)
-        }
-    }
-}
 
 /** Settings: auto-lock timing, biometrics, passphrase, recovery code and the link to backups. */
 @Composable

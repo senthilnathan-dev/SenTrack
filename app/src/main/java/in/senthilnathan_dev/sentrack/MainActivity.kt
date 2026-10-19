@@ -27,7 +27,7 @@ import `in`.senthilnathan_dev.sentrack.ui.vault.RecoveryCodeScreen
 import `in`.senthilnathan_dev.sentrack.ui.vault.SecuritySettingsScreen
 import `in`.senthilnathan_dev.sentrack.ui.vault.SetupScreen
 import `in`.senthilnathan_dev.sentrack.ui.vault.Stage
-import `in`.senthilnathan_dev.sentrack.ui.vault.UnlockedHome
+import `in`.senthilnathan_dev.sentrack.ui.shell.UnlockedShell
 import `in`.senthilnathan_dev.sentrack.ui.vault.VaultViewModel
 
 /**
@@ -80,11 +80,10 @@ class MainActivity : FragmentActivity() {
                             onShown = vaultViewModel::refreshBiometricState,
                         )
                         Stage.RECOVER -> RecoverScreen(state, vaultViewModel::recover, vaultViewModel::cancelRecover)
-                        Stage.UNLOCKED -> UnlockedHome(
-                            state = state,
+                        Stage.UNLOCKED -> UnlockedShell(
+                            finance = (application as SenTrackApp).container.finance,
                             onLock = vaultViewModel::lock,
                             onOpenSettings = vaultViewModel::openSettings,
-                            onCheckDatabase = vaultViewModel::checkDatabase,
                         )
                         Stage.SETTINGS -> {
                             BackHandler(onBack = vaultViewModel::closeSettings)

@@ -40,6 +40,8 @@ dependencies {
     implementation(project(":core-security"))
     implementation(project(":core-data"))
     implementation(project(":core-sync"))
+    implementation(project(":core-ui"))
+    implementation(project(":feature-finance"))
     implementation(libs.play.services.auth)
     implementation(libs.androidx.work.runtime)
     implementation(libs.androidx.fragment)

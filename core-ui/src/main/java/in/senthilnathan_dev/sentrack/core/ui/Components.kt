@@ -1,4 +1,4 @@
-package `in`.senthilnathan_dev.sentrack.ui.components
+package `in`.senthilnathan_dev.sentrack.core.ui
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -52,11 +53,17 @@ import androidx.compose.ui.unit.dp
 /** Standard screen: top bar (with a back arrow when [onBack] is given) over a scrolling column of [Section]s. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppScreen(title: String, onBack: (() -> Unit)? = null, content: @Composable ColumnScope.() -> Unit) {
+fun AppScreen(
+    title: String,
+    onBack: (() -> Unit)? = null,
+    actions: @Composable RowScope.() -> Unit = {},
+    content: @Composable ColumnScope.() -> Unit,
+) {
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(title) },
+                actions = actions,
                 navigationIcon = {
                     if (onBack != null) {
                         IconButton(onClick = onBack) { Text("←", modifier = Modifier.semantics { contentDescription = "Back" }, style = MaterialTheme.typography.titleLarge) }
