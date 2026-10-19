@@ -90,6 +90,52 @@ internal object NoteFormat {
         return out
     }
 
+    /**
+     * Where the inline marks and styled stretches sit inside one line, for live formatting in the editor. Mirrors the
+     * rules of [parseInline]: a mark only counts when it has a partner later in the line.
+     */
+    fun highlights(line: String): List<Highlight> {
+        val out = mutableListOf<Highlight>()
+        var boldStart = -1
+        var italicStart = -1
+        var strikeStart = -1
+        var codeStart = -1
+        var i = 0
+        while (i < line.length) {
+            val c = line[i]
+            when {
+                c == '\' && i + 1 < line.length -> { out += Highlight(i, i + 1, HighlightKind.MARKER); i += 2 }
+                c == '`' && (codeStart >= 0 || line.indexOf('`', i + 1) > 0) -> {
+                    out += Highlight(i, i + 1, HighlightKind.MARKER)
+                    if (codeStart >= 0) { out += Highlight(codeStart, i, HighlightKind.CODE); codeStart = -1 } else codeStart = i + 1
+                    i++
+                }
+                codeStart >= 0 -> i++
+                line.startsWith("**", i) -> {
+                    if (boldStart >= 0 || line.indexOf("**", i + 2) > 0) {
+                        out += Highlight(i, i + 2, HighlightKind.MARKER)
+                        if (boldStart >= 0) { out += Highlight(boldStart, i, HighlightKind.BOLD); boldStart = -1 } else boldStart = i + 2
+                    }
+                    i += 2
+                }
+                line.startsWith("~~", i) -> {
+                    if (strikeStart >= 0 || line.indexOf("~~", i + 2) > 0) {
+                        out += Highlight(i, i + 2, HighlightKind.MARKER)
+                        if (strikeStart >= 0) { out += Highlight(strikeStart, i, HighlightKind.STRIKE); strikeStart = -1 } else strikeStart = i + 2
+                    }
+                    i += 2
+                }
+                c == '*' && (italicStart >= 0 || (line.getOrNull(i + 1)?.isWhitespace() == false && line.indexOf('*', i + 1) > 0)) -> {
+                    out += Highlight(i, i + 1, HighlightKind.MARKER)
+                    if (italicStart >= 0) { out += Highlight(italicStart, i, HighlightKind.ITALIC); italicStart = -1 } else italicStart = i + 1
+                    i++
+                }
+                else -> i++
+            }
+        }
+        return out
+    }
+
     /** Flips the check box on source line [line] (`- [ ]` <-> `- [x]`). Other lines are left alone. */
     fun toggleCheck(markdown: String, line: Int): String {
         val lines = markdown.split('\n').toMutableList()
@@ -167,3 +213,8 @@ internal object NoteEditing {
         return Edit(newText, start, start + changed.length)
     }
 }
+
+internal enum class HighlightKind { MARKER, BOLD, ITALIC, STRIKE, CODE }
+
+/** A stretch [start, end) of a line that is a formatting mark or carries a style. */
+internal data class Highlight(val start: Int, val end: Int, val kind: HighlightKind)

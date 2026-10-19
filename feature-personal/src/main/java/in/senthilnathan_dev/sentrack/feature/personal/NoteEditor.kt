@@ -4,29 +4,36 @@ import android.text.format.Formatter
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Archive
-import androidx.compose.material.icons.filled.AttachFile
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.filled.Tag
 import androidx.compose.material.icons.filled.Unarchive
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
+import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -38,22 +45,21 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import `in`.senthilnathan_dev.sentrack.core.attachments.attachmentIcon
 import `in`.senthilnathan_dev.sentrack.core.data.personal.NoteAttachmentEntity
 import `in`.senthilnathan_dev.sentrack.core.data.personal.NoteEntity
-import `in`.senthilnathan_dev.sentrack.core.ui.ActionBar
+import `in`.senthilnathan_dev.sentrack.core.data.personal.NoteFolderEntity
 import `in`.senthilnathan_dev.sentrack.core.ui.AppScreen
 import `in`.senthilnathan_dev.sentrack.core.ui.IconAction
 import `in`.senthilnathan_dev.sentrack.core.ui.Message
 import `in`.senthilnathan_dev.sentrack.core.ui.MessageKind
-import `in`.senthilnathan_dev.sentrack.core.ui.PickerField
-import `in`.senthilnathan_dev.sentrack.core.ui.PrimaryButton
-import `in`.senthilnathan_dev.sentrack.core.ui.SecondaryButton
-import `in`.senthilnathan_dev.sentrack.core.ui.Section
 import kotlinx.coroutines.delay
 
 /** Everything typed in the editor, compared to know whether anything changed since the last save. */
@@ -66,11 +72,16 @@ private data class Draft(
     val archived: Boolean,
 )
 
+private fun TextFieldValue.toEdit() = NoteEditing.Edit(text, selection.start, selection.end)
+private fun NoteEditing.Edit.toValue() = TextFieldValue(text, TextRange(selStart, selEnd))
+
 /**
- * Write or read one note. Changes are saved automatically a moment after you stop typing, when you leave, and
- * before attaching a file, so nothing is lost and there is no Save button to remember.
+ * Write or read one note, the way modern notes apps work: a borderless page with live formatting, a toolbar docked
+ * above the keyboard (undo, redo, formats, attach), word suggestions from your own notes, lists that continue when
+ * you press Enter, and chips for folder and tags. Everything saves itself.
  *
  * @param noteId the note's id; a new note already has one, and its row is created at the first save with content.
+ * @param vocabulary word counts from all notes, for the suggestion strip.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -78,6 +89,7 @@ internal fun NoteEditorScreen(
     noteId: String,
     existing: NoteEntity?,
     data: NotesData,
+    vocabulary: Map<String, Int>,
     attachments: List<NoteAttachmentEntity>,
     notice: String?,
     problem: String?,
@@ -102,12 +114,14 @@ internal fun NoteEditorScreen(
     var pinned by rememberSaveable { mutableStateOf(existing?.pinned ?: false) }
     var archived by rememberSaveable { mutableStateOf(existing?.archived ?: false) }
     var reading by rememberSaveable { mutableStateOf(existing != null && existing.body.isNotBlank()) }
-    var newTag by rememberSaveable { mutableStateOf("") }
     var newFolderDialog by remember { mutableStateOf(false) }
     var newFolderName by remember { mutableStateOf("") }
+    var tagDialog by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
     var typedDelete by remember { mutableStateOf("") }
     var deletingAttachment by remember { mutableStateOf<NoteAttachmentEntity?>(null) }
+    val history = remember { EditHistory(body.text) }
+    var historyTick by remember { mutableStateOf(0) }   // bumped so the undo and redo buttons refresh
 
     fun draft() = Draft(title, body.text, folderId, tags, pinned, archived)
     var lastSaved by remember {
@@ -140,81 +154,139 @@ internal fun NoteEditorScreen(
     }
     BackHandler { leave() }
 
+    /** Typing: keeps lists going on Enter, and feeds the undo history. */
+    fun onBodyChange(new: TextFieldValue) {
+        val assisted = EditAssist.continueList(body.toEdit(), new.toEdit())
+        val result = assisted?.toValue() ?: new
+        history.record(EditHistory.Snapshot(result.text, result.selection.start, result.selection.end), System.currentTimeMillis(), forceNewStep = assisted != null)
+        body = result
+        historyTick++
+    }
+
+    fun applyAction(action: FormatAction) {
+        val result = applyFormat(body, action)
+        history.record(EditHistory.Snapshot(result.text, result.selection.start, result.selection.end), System.currentTimeMillis(), forceNewStep = true)
+        body = result
+        historyTick++
+    }
+
+    fun restore(s: EditHistory.Snapshot?) {
+        if (s != null) { body = TextFieldValue(s.text, TextRange(s.selStart, s.selEnd)); historyTick++ }
+    }
+
+    val prefix = if (!reading && body.selection.collapsed) EditAssist.prefixAt(body.text, body.selection.end) else ""
+    val suggestions = remember(vocabulary, prefix) { EditAssist.suggest(vocabulary, prefix) }
+
     AppScreen(
-        if (existing == null && !hasContent) "New note" else title.ifBlank { "Note" },
+        title = "",
+        largeHeader = false,
         onBack = ::leave,
         actions = {
             IconAction(if (reading) Icons.Filled.Edit else Icons.Filled.Visibility, if (reading) "Edit the text" else "Read the note", { reading = !reading })
-            IconAction(Icons.Filled.PushPin, if (pinned) "Unpin" else "Pin to the top", { pinned = !pinned }, tint = if (pinned) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color.Unspecified)
+            IconAction(
+                Icons.Filled.PushPin, if (pinned) "Unpin" else "Pin to the top", { pinned = !pinned },
+                tint = if (pinned) MaterialTheme.colorScheme.primary else Color.Unspecified,
+            )
             IconAction(if (archived) Icons.Filled.Unarchive else Icons.Filled.Archive, if (archived) "Restore from archive" else "Archive this note", { archived = !archived })
             if (existing != null) IconAction(Icons.Filled.Delete, "Delete this note permanently", { typedDelete = ""; confirmDelete = true })
         },
         bottomBar = {
-            ActionBar {
-                Message(notice, MessageKind.SUCCESS)
-                Message(problem, MessageKind.ERROR)
-                PrimaryButton("Done", onClick = ::leave, icon = Icons.Filled.Check)
+            Surface(tonalElevation = 3.dp, modifier = Modifier.fillMaxWidth()) {
+                Column {
+                    Message(notice, MessageKind.SUCCESS)
+                    Message(problem, MessageKind.ERROR)
+                    if (!reading) {
+                        if (suggestions.isNotEmpty()) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                suggestions.forEach { word ->
+                                    SuggestionChip(
+                                        onClick = {
+                                            val done = EditAssist.complete(body.toEdit(), word)
+                                            history.record(EditHistory.Snapshot(done.text, done.selStart, done.selEnd), System.currentTimeMillis(), forceNewStep = true)
+                                            body = done.toValue()
+                                            historyTick++
+                                        },
+                                        label = { Text(word) },
+                                    )
+                                }
+                            }
+                        }
+                        // historyTick is read so this bar updates after every undo, redo or edit.
+                        val ticked = historyTick
+                        FormatToolbar(
+                            canUndo = ticked >= 0 && history.canUndo,
+                            canRedo = history.canRedo,
+                            onUndo = { restore(history.undo()) },
+                            onRedo = { restore(history.redo()) },
+                            onAction = ::applyAction,
+                            onAttach = { saveNow(); onPickAttachments() },
+                        )
+                    }
+                }
             }
         },
     ) {
-        OutlinedTextField(
+        // ---- Title
+        BasicTextField(
             value = title,
             onValueChange = { title = it },
-            label = { Text("Title") },
-            singleLine = true,
+            textStyle = MaterialTheme.typography.headlineSmall.copy(color = MaterialTheme.colorScheme.onSurface),
+            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, autoCorrectEnabled = true),
             modifier = Modifier.fillMaxWidth(),
+            decorationBox = { inner ->
+                Box {
+                    if (title.isEmpty()) Text("Title", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    inner()
+                }
+            },
         )
 
-        if (reading) {
-            MarkdownView(
-                body.text,
-                onToggleCheck = { line ->
-                    val updated = NoteFormat.toggleCheck(body.text, line)
-                    body = TextFieldValue(updated, TextRange(updated.length))
-                },
+        // ---- Folder and tags as chips
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            FolderChip(
+                name = data.folderName(folderId),
+                folders = data.folders.filter { !it.archived || it.id == folderId },
+                onSelect = { folderId = it },
+                onNew = { newFolderName = ""; newFolderDialog = true },
             )
-        } else {
-            BodyEditor(body) { body = it }
+            tags.forEach { t -> FilterChip(selected = true, onClick = { tags = tags - t }, label = { Text("#$t  ✕") }) }
+            AssistChip(onClick = { tagDialog = true }, label = { Text("Add tag") }, leadingIcon = { Icon(Icons.Filled.Tag, contentDescription = null) })
         }
 
-        Section("Organise") {
-            val folderName = data.folderName(folderId)
-            PickerField(
-                "Folder",
-                folderName ?: "No folder",
-                listOf(Pair<String, String?>("No folder", null)) + data.folders.filter { !it.archived || it.id == folderId }.map { Pair<String, String?>(it.name, it.id) },
-            ) { folderId = it }
-            TextButton(onClick = { newFolderName = ""; newFolderDialog = true }) { Text("+ New folder") }
+        HorizontalDivider()
 
-            Text("Tags", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                tags.forEach { t ->
-                    FilterChip(selected = true, onClick = { tags = tags - t }, label = { Text("#$t  ✕") })
-                }
-                data.tags.filter { s -> tags.none { it.equals(s.name, ignoreCase = true) } }.take(12).forEach { s ->
-                    FilterChip(selected = false, onClick = { tags = tags + s.name }, label = { Text("#${s.name}") })
-                }
-            }
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = newTag,
-                    onValueChange = { newTag = it },
-                    label = { Text("Add a tag") },
-                    singleLine = true,
-                    modifier = Modifier.weight(1f),
+        // ---- Body
+        if (reading) {
+            if (body.text.isBlank()) {
+                Text("This note is empty. Tap the pencil to write.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            } else {
+                MarkdownView(
+                    body.text,
+                    onToggleCheck = { line ->
+                        val updated = NoteFormat.toggleCheck(body.text, line)
+                        history.record(EditHistory.Snapshot(updated, updated.length, updated.length), System.currentTimeMillis(), forceNewStep = true)
+                        body = TextFieldValue(updated, TextRange(updated.length))
+                        historyTick++
+                    },
                 )
-                IconAction(Icons.Filled.Add, "Add the tag", {
-                    val name = newTag.trim().trimStart('#')
-                    if (name.isNotEmpty() && tags.none { it.equals(name, ignoreCase = true) }) tags = tags + name
-                    newTag = ""
-                })
             }
+        } else {
+            LiveBodyField(body, ::onBodyChange)
         }
 
-        Section("Attachments", "Photos, videos, PDFs and any other files. Encrypted on this phone.") {
-            if (attachments.isEmpty()) Text("Nothing attached.")
-            attachments.forEachIndexed { i, a ->
-                if (i > 0) HorizontalDivider()
+        // ---- Attachments
+        if (attachments.isNotEmpty() || importing) {
+            HorizontalDivider()
+            Text(
+                if (importing) "Attaching…" else "Attachments",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            attachments.forEach { a ->
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     Row(
                         modifier = Modifier.weight(1f).clickable { saveNow(); onOpenAttachment(a.id) }.padding(vertical = 6.dp),
@@ -235,12 +307,6 @@ internal fun NoteEditorScreen(
                     IconAction(Icons.Filled.Delete, "Remove ${a.name}", { deletingAttachment = a })
                 }
             }
-            SecondaryButton(
-                if (importing) "Adding…" else "Attach files",
-                onClick = { saveNow(); onPickAttachments() },
-                enabled = !importing,
-                icon = Icons.Filled.AttachFile,
-            )
         }
     }
 
@@ -256,6 +322,36 @@ internal fun NoteEditorScreen(
                 }) { Text("Create") }
             },
             dismissButton = { TextButton(onClick = { newFolderDialog = false }) { Text("Cancel") } },
+        )
+    }
+
+    if (tagDialog) {
+        var tagText by remember { mutableStateOf("") }
+        val unused = data.tags.filter { s -> tags.none { it.equals(s.name, ignoreCase = true) } }
+        AlertDialog(
+            onDismissRequest = { tagDialog = false },
+            title = { Text("Add a tag") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(value = tagText, onValueChange = { tagText = it }, label = { Text("New tag") }, singleLine = true)
+                    if (unused.isNotEmpty()) {
+                        Text("Or pick one you already use", style = MaterialTheme.typography.labelMedium)
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            unused.take(12).forEach { s ->
+                                SuggestionChip(onClick = { tags = tags + s.name; tagDialog = false }, label = { Text("#${s.name}") })
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val name = tagText.trim().trimStart('#')
+                    if (name.isNotEmpty() && tags.none { it.equals(name, ignoreCase = true) }) tags = tags + name
+                    tagDialog = false
+                }) { Text("Add") }
+            },
+            dismissButton = { TextButton(onClick = { tagDialog = false }) { Text("Cancel") } },
         )
     }
 
@@ -284,5 +380,20 @@ internal fun NoteEditorScreen(
             },
             dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancel") } },
         )
+    }
+}
+
+/** The folder as a chip; tapping it opens a menu of folders. */
+@Composable
+private fun FolderChip(name: String?, folders: List<NoteFolderEntity>, onSelect: (String?) -> Unit, onNew: () -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    Box {
+        AssistChip(onClick = { open = true }, label = { Text(name ?: "No folder") }, leadingIcon = { Icon(Icons.Filled.Folder, contentDescription = null) })
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            DropdownMenuItem(text = { Text("No folder") }, onClick = { onSelect(null); open = false })
+            folders.forEach { f -> DropdownMenuItem(text = { Text(f.name) }, onClick = { onSelect(f.id); open = false }) }
+            HorizontalDivider()
+            DropdownMenuItem(text = { Text("+ New folder") }, onClick = { open = false; onNew() })
+        }
     }
 }

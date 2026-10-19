@@ -16,3 +16,12 @@ Schema v6: `note`, `note_folder`, `note_tag`, `note_tag_link`, `note_attachment`
 
 ## Coming next in Personal
 Habits, plans / goals / wishlist / bucket list, achievements, important dates (using the reminders engine), and the unified timeline.
+
+## Editor (second iteration)
+- Borderless page with a compact header; large title; folder and tag chips under it
+- Live formatting while typing: marks fade, bold is bold, headings are large, quotes italic (text unchanged, so cursor positions stay predictable)
+- Toolbar docked above the keyboard: undo, redo, bold, italic, strikethrough, heading, bullet, check list, numbered list, quote, attach
+- Undo/redo: typing in quick succession is one step; toolbar actions are their own steps (`EditHistory`, tested)
+- Lists continue on Enter and end on an empty item (`EditAssist.continueList`, tested)
+- Word suggestions from the user's own notes, shown above the toolbar; computed on the phone only (`EditAssist`, tested)
+- Standard keyboard options (sentence capitals, autocorrect). Note: some keyboards suppress their own suggestions in windows that block screenshots (`FLAG_SECURE`, which SenTrack sets everywhere); the in-app suggestions cover that

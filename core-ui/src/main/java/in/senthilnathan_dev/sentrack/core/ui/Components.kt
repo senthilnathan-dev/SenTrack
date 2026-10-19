@@ -45,6 +45,7 @@ import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
@@ -84,9 +85,10 @@ fun AppScreen(
     actions: @Composable RowScope.() -> Unit = {},
     floatingActionButton: @Composable () -> Unit = {},
     bottomBar: @Composable () -> Unit = {},
+    largeHeader: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val scrollBehavior = if (largeHeader) TopAppBarDefaults.exitUntilCollapsedScrollBehavior() else TopAppBarDefaults.pinnedScrollBehavior()
     val insets = if (LocalBottomInsetHandled.current) {
         WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
     } else {
@@ -98,14 +100,22 @@ fun AppScreen(
         floatingActionButton = floatingActionButton,
         bottomBar = bottomBar,
         topBar = {
-            LargeTopAppBar(
-                title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                actions = actions,
-                navigationIcon = {
-                    if (onBack != null) IconAction(Icons.AutoMirrored.Filled.ArrowBack, "Back", onBack)
-                },
-                scrollBehavior = scrollBehavior,
-            )
+            if (largeHeader) {
+                LargeTopAppBar(
+                    title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    actions = actions,
+                    navigationIcon = { if (onBack != null) IconAction(Icons.AutoMirrored.Filled.ArrowBack, "Back", onBack) },
+                    scrollBehavior = scrollBehavior,
+                )
+            } else {
+                // A slim bar for screens where the space matters, such as the note editor.
+                TopAppBar(
+                    title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    actions = actions,
+                    navigationIcon = { if (onBack != null) IconAction(Icons.AutoMirrored.Filled.ArrowBack, "Back", onBack) },
+                    scrollBehavior = scrollBehavior,
+                )
+            }
         },
     ) { padding ->
         Column(

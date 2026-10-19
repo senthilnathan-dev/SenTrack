@@ -60,6 +60,8 @@ fun PersonalTab(repo: NoteRepository, files: FileVault, topActions: @Composable 
     val links by remember(repo) { repo.tagLinks() }.collectAsState(initial = emptyList())
     val attachments by remember(repo) { repo.attachments() }.collectAsState(initial = emptyList())
     val data = remember(notes, folders, tags, links, attachments) { NotesData(notes, folders, tags, links, attachments) }
+    // Words from all your notes, for the typing suggestion strip. Computed on the phone only; never leaves it.
+    val vocabulary = remember(notes) { EditAssist.vocabulary(notes.map { it.title + " " + NoteFormat.plainText(it.body) }) }
 
     val stack = remember { mutableStateListOf<PersonalRoute>(PersonalRoute.Home) }
     val route = stack.last()
@@ -135,6 +137,7 @@ fun PersonalTab(repo: NoteRepository, files: FileVault, topActions: @Composable 
         is PersonalRoute.Editor -> NoteEditorScreen(
             noteId = current.noteId,
             existing = notes.firstOrNull { it.id == current.noteId },
+            vocabulary = vocabulary,
             data = data,
             attachments = attachments.filter { it.noteId == current.noteId },
             notice = notice,

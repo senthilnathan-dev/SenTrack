@@ -14,6 +14,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Redo
+import androidx.compose.material.icons.automirrored.filled.Undo
+import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.FormatBold
 import androidx.compose.material.icons.filled.FormatItalic
@@ -25,7 +28,17 @@ import androidx.compose.material.icons.filled.Title
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.sp
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -150,21 +163,111 @@ internal fun applyFormat(value: TextFieldValue, action: FormatAction): TextField
     return TextFieldValue(result.text, TextRange(result.selStart, result.selEnd))
 }
 
-/** The writing view: a row of formatting buttons above a plain text box. */
-@Composable
-internal fun BodyEditor(value: TextFieldValue, onChange: (TextFieldValue) -> Unit) {
-    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(modifier = Modifier.horizontalScroll(rememberScrollState())) {
-            FormatAction.entries.forEach { action ->
-                IconAction(action.icon, action.description, { onChange(applyFormat(value, action)) })
+/**
+ * Styles the text as you type: marks fade into the background, bold looks bold, headings are large, quotes are
+ * italic. The text itself is unchanged (same characters, same cursor positions), so editing stays predictable.
+ */
+internal class MarkdownTransformation(
+    private val markerColor: Color,
+    private val accent: Color,
+    private val codeBackground: Color,
+) : VisualTransformation {
+    override fun filter(text: AnnotatedString): TransformedText {
+        val source = text.text
+        val styled = buildAnnotatedString {
+            append(source)
+            var offset = 0
+            for (line in source.split('\n')) {
+                styleLine(line, offset)
+                offset += line.length + 1
             }
         }
-        OutlinedTextField(
-            value = value,
-            onValueChange = onChange,
-            label = { Text("Write your note") },
-            minLines = 8,
-            modifier = Modifier.fillMaxWidth(),
-        )
+        return TransformedText(styled, OffsetMapping.Identity)
+    }
+
+    private fun AnnotatedString.Builder.styleLine(line: String, at: Int) {
+        val dim = SpanStyle(color = markerColor)
+        // Line-level: block marks and sizes.
+        when {
+            line.startsWith("### ") -> { addStyle(dim, at, at + 4); addStyle(SpanStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold), at + 4, at + line.length) }
+            line.startsWith("## ") -> { addStyle(dim, at, at + 3); addStyle(SpanStyle(fontSize = 21.sp, fontWeight = FontWeight.Bold), at + 3, at + line.length) }
+            line.startsWith("# ") -> { addStyle(dim, at, at + 2); addStyle(SpanStyle(fontSize = 25.sp, fontWeight = FontWeight.Bold), at + 2, at + line.length) }
+            line.startsWith("- [ ] ") -> addStyle(dim, at, at + 6)
+            line.startsWith("- [x] ") || line.startsWith("- [X] ") -> {
+                addStyle(dim, at, at + 6)
+                addStyle(SpanStyle(textDecoration = TextDecoration.LineThrough, color = markerColor), at + 6, at + line.length)
+            }
+            line.startsWith("- ") -> addStyle(SpanStyle(color = accent, fontWeight = FontWeight.Bold), at, at + 2)
+            line.startsWith("> ") -> { addStyle(dim, at, at + 2); addStyle(SpanStyle(fontStyle = FontStyle.Italic), at + 2, at + line.length) }
+            line.trim() == "---" -> addStyle(dim, at, at + line.length)
+            else -> Regex("""^\d{1,3}\. """).find(line)?.let { addStyle(SpanStyle(color = accent, fontWeight = FontWeight.Bold), at, at + it.value.length) }
+        }
+        // Inline: marks dim, styled stretches styled.
+        for (h in NoteFormat.highlights(line)) {
+            val style = when (h.kind) {
+                HighlightKind.MARKER -> dim
+                HighlightKind.BOLD -> SpanStyle(fontWeight = FontWeight.Bold)
+                HighlightKind.ITALIC -> SpanStyle(fontStyle = FontStyle.Italic)
+                HighlightKind.STRIKE -> SpanStyle(textDecoration = TextDecoration.LineThrough)
+                HighlightKind.CODE -> SpanStyle(fontFamily = FontFamily.Monospace, background = codeBackground)
+            }
+            addStyle(style, at + h.start, at + h.end)
+        }
+    }
+}
+
+/** A borderless writing surface with live formatting, like modern notes apps. */
+@Composable
+internal fun LiveBodyField(
+    value: TextFieldValue,
+    onChange: (TextFieldValue) -> Unit,
+    modifier: Modifier = Modifier,
+    placeholder: String = "Start writing…",
+) {
+    val colors = MaterialTheme.colorScheme
+    val transformation = remember(colors.outline, colors.primary, colors.surfaceVariant) {
+        MarkdownTransformation(colors.outline.copy(alpha = 0.7f), colors.primary, colors.surfaceVariant)
+    }
+    BasicTextField(
+        value = value,
+        onValueChange = onChange,
+        modifier = modifier.fillMaxWidth(),
+        textStyle = MaterialTheme.typography.bodyLarge.copy(color = colors.onSurface),
+        cursorBrush = SolidColor(colors.primary),
+        visualTransformation = transformation,
+        // Normal typing help: capital letters at sentence starts, spelling correction, and word suggestions.
+        keyboardOptions = KeyboardOptions(
+            capitalization = KeyboardCapitalization.Sentences,
+            autoCorrectEnabled = true,
+            keyboardType = KeyboardType.Text,
+        ),
+        decorationBox = { inner ->
+            Box(modifier = Modifier.fillMaxWidth().heightIn(min = 220.dp)) {
+                if (value.text.isEmpty()) Text(placeholder, style = MaterialTheme.typography.bodyLarge, color = colors.onSurfaceVariant)
+                inner()
+            }
+        },
+    )
+}
+
+/**
+ * The formatting bar, docked above the keyboard while writing: undo, redo, then the text formats, then attach.
+ */
+@Composable
+internal fun FormatToolbar(
+    canUndo: Boolean,
+    canRedo: Boolean,
+    onUndo: () -> Unit,
+    onRedo: () -> Unit,
+    onAction: (FormatAction) -> Unit,
+    onAttach: () -> Unit,
+) {
+    Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), verticalAlignment = Alignment.CenterVertically) {
+        IconAction(Icons.AutoMirrored.Filled.Undo, "Undo", onUndo, enabled = canUndo)
+        IconAction(Icons.AutoMirrored.Filled.Redo, "Redo", onRedo, enabled = canRedo)
+        FormatAction.entries.forEach { action ->
+            IconAction(action.icon, action.description, { onAction(action) })
+        }
+        IconAction(Icons.Filled.AttachFile, "Attach files", onAttach)
     }
 }

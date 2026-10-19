@@ -106,4 +106,23 @@ class NoteFormatTest {
         assertEquals("- [ ] task", NoteEditing.toggleLinePrefix(edit("1. task", 0), "- [ ] ").text)
         assertEquals("## h", NoteEditing.toggleLinePrefix(edit("# h", 0), "## ").text)
     }
+
+    // ---- live highlighting
+
+    @Test
+    fun highlights_findMarksAndStyledStretches() {
+        val h = NoteFormat.highlights("a **b** c")
+        assertTrue(h.contains(Highlight(2, 4, HighlightKind.MARKER)))
+        assertTrue(h.contains(Highlight(5, 7, HighlightKind.MARKER)))
+        assertTrue(h.contains(Highlight(4, 5, HighlightKind.BOLD)))
+    }
+
+    @Test
+    fun highlights_italicStrikeCode_andIgnoreUnmatched() {
+        val h = NoteFormat.highlights("*i* ~~s~~ `c`")
+        assertTrue(h.contains(Highlight(1, 2, HighlightKind.ITALIC)))
+        assertTrue(h.contains(Highlight(6, 7, HighlightKind.STRIKE)))
+        assertTrue(h.contains(Highlight(11, 12, HighlightKind.CODE)))
+        assertEquals(emptyList<Highlight>(), NoteFormat.highlights("2 * 3 and **open"))
+    }
 }
