@@ -21,5 +21,8 @@ Net worth + 6-month trend; month selector with income, spent, invested, left-aft
 - `feature-finance`: `FinanceCalculator` + `FinanceInsights` (pure, unit-tested), `Money`, charts, screens
 - `core-ui`: shared UI kit
 
+## Plan tab (done)
+Budgets: monthly limit per expense category with progress (green, amber from 80%, red when over), unbudgeted-spend hint, dashboard card. Goals: target amount and optional date, linked to any accounts (bank, cash, wallet, FD, RD, gold...), progress from their balances/principal, monthly amount needed to reach the date, archive/restore.
+
 ## Still to build
-Budgets and goals (data model exists), tax document vault, recurring entries (monthly PF/SIP) and reminders (Phase 7), optional current value per investment.
+Tax document vault, recurring entries (monthly PF/SIP) and reminders (Phase 7), optional current value per investment, overspending alerts (Phase 7).

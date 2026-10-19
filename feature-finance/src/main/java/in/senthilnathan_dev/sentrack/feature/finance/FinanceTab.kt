@@ -12,10 +12,11 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LeadingIconTab
+import androidx.compose.material3.Tab
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.FilterChip
@@ -37,6 +38,8 @@ import `in`.senthilnathan_dev.sentrack.core.data.finance.FinanceRepository
 import `in`.senthilnathan_dev.sentrack.core.data.finance.TxType
 import `in`.senthilnathan_dev.sentrack.core.ui.AppScreen
 import `in`.senthilnathan_dev.sentrack.core.ui.SecondaryButton
+import java.time.LocalDate
+import java.time.YearMonth
 import kotlinx.coroutines.launch
 
 /** Where the user is inside the Finance tab. */
@@ -49,12 +52,15 @@ internal sealed interface FinanceRoute {
     data class Entry(val txId: String?, val type: TxType = TxType.EXPENSE, val accountId: String? = null) : FinanceRoute
     data class Split(val fromId: String?) : FinanceRoute
     data object Categories : FinanceRoute
+    data class GoalEditor(val id: String?) : FinanceRoute
+    data object ArchivedGoals : FinanceRoute
 }
 
 private enum class FinanceSection(val label: String, val icon: ImageVector) {
     DASHBOARD("Dashboard", Icons.Filled.Dashboard),
     ACCOUNTS("Accounts", Icons.Filled.AccountBalanceWallet),
     ACTIVITY("Activity", Icons.Filled.Receipt),
+    PLAN("Plan", Icons.Filled.Savings),
 }
 
 /**
@@ -74,9 +80,17 @@ fun FinanceTab(repo: FinanceRepository, topActions: @Composable RowScope.() -> U
     val accounts by remember(repo) { repo.accounts() }.collectAsState(initial = emptyList())
     val transactions by remember(repo) { repo.transactions() }.collectAsState(initial = emptyList())
     val categories by remember(repo) { repo.categories() }.collectAsState(initial = emptyList())
+    val budgets by remember(repo) { repo.budgets() }.collectAsState(initial = emptyList())
+    val goals by remember(repo) { repo.goals() }.collectAsState(initial = emptyList())
+    val goalLinks by remember(repo) { repo.goalAccounts() }.collectAsState(initial = emptyList())
     val summaries = remember(accounts, transactions) { FinanceCalculator.summarize(accounts, transactions) }
     val accountMap = remember(accounts) { accounts.associateBy { it.id } }
     val categoryMap = remember(categories) { categories.associateBy { it.id } }
+    val linkedByGoal = remember(goalLinks) { goalLinks.groupBy({ it.goalId }, { it.accountId }).mapValues { it.value.toSet() } }
+    val goalProgress = remember(goals, linkedByGoal, summaries) {
+        goals.map { FinanceCalculator.goalProgress(it, linkedByGoal[it.id] ?: emptySet(), summaries, LocalDate.now()) }
+    }
+    val thisMonth = remember(transactions) { YearMonth.now().let { FinanceCalculator.monthSummary(transactions, it.year, it.monthValue) } }
 
     var section by rememberSaveable { mutableStateOf(FinanceSection.DASHBOARD) }
     val stack = remember { mutableStateListOf<FinanceRoute>(FinanceRoute.Home) }
@@ -94,7 +108,7 @@ fun FinanceTab(repo: FinanceRepository, topActions: @Composable RowScope.() -> U
             bottomBar = {
                 PrimaryTabRow(selectedTabIndex = section.ordinal, containerColor = MaterialTheme.colorScheme.surfaceContainer) {
                     FinanceSection.entries.forEach { s ->
-                        LeadingIconTab(
+                        Tab(
                             selected = section == s,
                             onClick = { section = s },
                             text = { Text(s.label) },
@@ -116,8 +130,11 @@ fun FinanceTab(repo: FinanceRepository, topActions: @Composable RowScope.() -> U
                     summaries = summaries,
                     transactions = transactions,
                     categories = categoryMap,
+                    budgets = budgets,
+                    goals = goalProgress.filterNot { it.goal.archived },
                     onAddAccount = { open(FinanceRoute.NewAccount) },
                     onSplit = { open(FinanceRoute.Split(null)) },
+                    onOpenPlan = { section = FinanceSection.PLAN },
                 )
                 FinanceSection.ACCOUNTS -> {
                     AccountsContent(
@@ -133,6 +150,16 @@ fun FinanceTab(repo: FinanceRepository, topActions: @Composable RowScope.() -> U
                     accounts = accountMap,
                     categories = categoryMap,
                     onOpen = { open(FinanceRoute.Entry(it)) },
+                )
+                FinanceSection.PLAN -> PlanContent(
+                    budgets = budgets,
+                    categories = categories,
+                    month = thisMonth,
+                    goals = goalProgress.filterNot { it.goal.archived },
+                    archivedGoalCount = goalProgress.count { it.goal.archived },
+                    onSetBudget = { id, limit -> scope.launch { repo.setBudget(id, limit) } },
+                    onOpenGoal = { open(FinanceRoute.GoalEditor(it)) },
+                    onOpenArchivedGoals = { open(FinanceRoute.ArchivedGoals) },
                 )
             }
             Spacer(Modifier.height(72.dp))   // keeps the last card clear of the floating button
@@ -219,6 +246,33 @@ fun FinanceTab(repo: FinanceRepository, topActions: @Composable RowScope.() -> U
             categories = categories,
             onAdd = { name, type -> scope.launch { repo.addCategory(name, type) } },
             onToggleArchive = { c -> scope.launch { repo.saveCategory(c.copy(archived = !c.archived)) } },
+            onBack = ::back,
+        )
+
+        is FinanceRoute.GoalEditor -> {
+            val goal = route.id?.let { id -> goals.firstOrNull { it.id == id } }
+            if (route.id != null && goal == null) back() else {
+                val linked = goal?.let { linkedByGoal[it.id] } ?: emptySet()
+                GoalEditorScreen(
+                    existing = goal,
+                    linkedAccountIds = linked,
+                    summaries = summaries,
+                    onSave = { saved, accountIds -> scope.launch { repo.saveGoal(saved, accountIds); back() } },
+                    onToggleArchive = goal?.let { g ->
+                        fun() { scope.launch { repo.saveGoal(g.copy(archived = !g.archived), linked); back() } }
+                    },
+                    onBack = ::back,
+                )
+            }
+        }
+
+        FinanceRoute.ArchivedGoals -> ArchivedGoalsScreen(
+            archived = goalProgress.filter { it.goal.archived },
+            onRestore = { id ->
+                goals.firstOrNull { it.id == id }?.let { g ->
+                    scope.launch { repo.saveGoal(g.copy(archived = false), linkedByGoal[id] ?: emptySet()) }
+                }
+            },
             onBack = ::back,
         )
     }

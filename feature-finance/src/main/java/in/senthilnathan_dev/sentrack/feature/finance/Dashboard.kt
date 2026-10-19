@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CallSplit
+import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -26,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import `in`.senthilnathan_dev.sentrack.core.data.finance.BudgetEntity
 import `in`.senthilnathan_dev.sentrack.core.data.finance.CategoryEntity
 import `in`.senthilnathan_dev.sentrack.core.data.finance.TransactionEntity
 import `in`.senthilnathan_dev.sentrack.core.ui.PrimaryButton
@@ -75,8 +77,11 @@ internal fun ColumnScope.DashboardContent(
     summaries: List<AccountSummary>,
     transactions: List<TransactionEntity>,
     categories: Map<String, CategoryEntity>,
+    budgets: List<BudgetEntity>,
+    goals: List<GoalProgress>,
     onAddAccount: () -> Unit,
     onSplit: () -> Unit,
+    onOpenPlan: () -> Unit,
 ) {
     val activeAccounts = summaries.filterNot { it.account.archived }
     if (activeAccounts.isEmpty()) {
@@ -189,6 +194,41 @@ internal fun ColumnScope.DashboardContent(
             HorizontalDivider()
             StatRow("Total spent", Money.format(thisMonth.expensePaise))
         }
+    }
+
+    // ---- Budgets
+    Section("Budgets", "Closest to the limit first, for ${month.longName()}.") {
+        val statuses = FinanceCalculator.budgetStatuses(budgets, thisMonth).sortedByDescending { it.fraction }
+        if (statuses.isEmpty()) {
+            Text("No budgets yet. Set a monthly limit for the categories you want to watch.")
+        } else {
+            statuses.take(3).forEachIndexed { i, s ->
+                if (i > 0) HorizontalDivider()
+                BudgetRow(categories[s.categoryId]?.name ?: "Category", s)
+            }
+            val over = statuses.count { it.isOver }
+            if (over > 0) {
+                Text(
+                    if (over == 1) "1 budget is over its limit." else "$over budgets are over their limits.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = bad,
+                )
+            }
+        }
+        SecondaryButton(if (statuses.isEmpty()) "Set up budgets" else "See all budgets", onClick = onOpenPlan, icon = Icons.Filled.Savings)
+    }
+
+    // ---- Goals
+    Section("Goals") {
+        if (goals.isEmpty()) {
+            Text("No goals yet. Choose something to save for and which accounts count towards it.")
+        } else {
+            goals.take(3).forEachIndexed { i, g ->
+                if (i > 0) HorizontalDivider()
+                GoalRow(g)
+            }
+        }
+        SecondaryButton(if (goals.isEmpty()) "Set up a goal" else "See all goals", onClick = onOpenPlan, icon = Icons.Filled.Savings)
     }
 
     // ---- Cash flow
