@@ -55,6 +55,7 @@ class MainActivity : FragmentActivity() {
                             onLock = vaultViewModel::lock,
                             onToggleBiometric = { vaultViewModel.toggleBiometrics(this@MainActivity) },
                             onNewRecoveryCode = vaultViewModel::regenerateRecoveryCode,
+                            onCheckDatabase = vaultViewModel::checkDatabase,
                         )
                     }
                 }

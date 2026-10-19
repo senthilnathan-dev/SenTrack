@@ -19,6 +19,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -160,10 +161,13 @@ fun UnlockedHome(
     onLock: () -> Unit,
     onToggleBiometric: () -> Unit,
     onNewRecoveryCode: () -> Unit,
+    onCheckDatabase: () -> Unit,
 ) {
+    LaunchedEffect(Unit) { onCheckDatabase() }
     ScreenColumn {
         Text("SenTrack", style = MaterialTheme.typography.headlineLarge)
         Text("Vault unlocked. Modules arrive in the next phases.")
+        Text("Encrypted database opened ${state.dbOpenCount ?: "…"} time(s).")
         ErrorText(state.error)
         Button(onClick = onLock, modifier = Modifier.fillMaxWidth()) { Text("Lock now") }
         if (state.biometricAvailable) {
