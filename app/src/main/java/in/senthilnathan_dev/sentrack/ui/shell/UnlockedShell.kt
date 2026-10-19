@@ -80,7 +80,7 @@ fun UnlockedShell(
                     Tab.entries.forEach { tab ->
                         NavigationBarItem(
                             selected = selected == tab,
-                            onClick = { selected = tab },
+                            onClick = { selected = tab; showReminders = false },
                             icon = { Icon(tab.icon, contentDescription = null) },
                             label = { Text(tab.label) },
                         )
