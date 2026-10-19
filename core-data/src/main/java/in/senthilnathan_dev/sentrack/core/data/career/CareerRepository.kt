@@ -14,6 +14,18 @@ class CareerRepository(private val holder: DatabaseHolder) {
     fun resumes(): Flow<List<ResumeEntity>> = dao().observeResumes()
     fun attachments(): Flow<List<CareerAttachmentEntity>> = dao().observeCareerAttachments()
 
+    fun workspace(): Flow<List<WorkspaceItemEntity>> = dao().observeWorkspace()
+    fun checklist(): Flow<List<ChecklistItemEntity>> = dao().observeChecklist()
+
+    suspend fun saveWorkspaceItem(item: WorkspaceItemEntity) = dao().upsertWorkspaceItem(item)
+    suspend fun deleteWorkspaceItem(id: String) = dao().deleteWorkspaceItem(id)
+
+    /** Counts one launch from SenTrack and remembers when. */
+    suspend fun recordLaunch(id: String) = dao().recordLaunch(id, System.currentTimeMillis())
+
+    suspend fun saveChecklistItems(items: List<ChecklistItemEntity>) = dao().upsertChecklistItems(items)
+    suspend fun deleteChecklistItem(id: String) = dao().deleteChecklistItem(id)
+
     suspend fun saveLearning(item: LearningItemEntity) = dao().upsertLearning(item)
     suspend fun deleteLearning(id: String) = dao().deleteLearning(id)
     suspend fun saveCertification(c: CertificationEntity) = dao().upsertCertification(c)

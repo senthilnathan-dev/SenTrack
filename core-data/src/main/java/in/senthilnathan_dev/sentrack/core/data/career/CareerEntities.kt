@@ -100,8 +100,58 @@ data class CareerAttachmentEntity(
     val addedAtMillis: Long,
 )
 
+/**
+ * An app or website you use for work, launched from SenTrack so usage can be counted.
+ *
+ * @param companyId the employer it belongs to, or null for your own (personal and career tools).
+ * @param kind `APP` or `SITE`; [target] is the Android package name or the web address.
+ */
+@Entity(tableName = "workspace_item", indices = [Index("companyId")])
+data class WorkspaceItemEntity(
+    @PrimaryKey val id: String,
+    val companyId: String?,
+    val name: String,
+    val kind: String,
+    val target: String,
+    val note: String?,
+    val launchCount: Int,
+    val lastLaunchedMillis: Long?,
+    val archived: Boolean,
+    val createdAtMillis: Long,
+)
+
+/** One line of a company's onboarding or offboarding checklist. [phase] is `ONBOARD` or `OFFBOARD`. */
+@Entity(tableName = "checklist_item", indices = [Index("companyId")])
+data class ChecklistItemEntity(
+    @PrimaryKey val id: String,
+    val companyId: String,
+    val phase: String,
+    val title: String,
+    val done: Boolean,
+    val sortOrder: Int,
+)
+
 @Dao
 interface CareerDao {
+    @Query("SELECT * FROM workspace_item ORDER BY archived, launchCount DESC, name COLLATE NOCASE")
+    fun observeWorkspace(): Flow<List<WorkspaceItemEntity>>
+
+    @Upsert suspend fun upsertWorkspaceItem(item: WorkspaceItemEntity)
+
+    @Query("DELETE FROM workspace_item WHERE id = :id")
+    suspend fun deleteWorkspaceItem(id: String)
+
+    @Query("UPDATE workspace_item SET launchCount = launchCount + 1, lastLaunchedMillis = :now WHERE id = :id")
+    suspend fun recordLaunch(id: String, now: Long)
+
+    @Query("SELECT * FROM checklist_item ORDER BY companyId, phase, sortOrder")
+    fun observeChecklist(): Flow<List<ChecklistItemEntity>>
+
+    @Upsert suspend fun upsertChecklistItems(items: List<ChecklistItemEntity>)
+
+    @Query("DELETE FROM checklist_item WHERE id = :id")
+    suspend fun deleteChecklistItem(id: String)
+
     @Query("SELECT * FROM learning_item ORDER BY archived, CASE status WHEN 'DONE' THEN 1 ELSE 0 END, createdAtMillis DESC")
     fun observeLearning(): Flow<List<LearningItemEntity>>
 

@@ -12,10 +12,11 @@ import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material.icons.filled.WorkOutline
+import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -40,6 +41,9 @@ import `in`.senthilnathan_dev.sentrack.core.data.career.CertificationEntity
 import `in`.senthilnathan_dev.sentrack.core.data.career.InterviewEntity
 import `in`.senthilnathan_dev.sentrack.core.data.career.JobApplicationEntity
 import `in`.senthilnathan_dev.sentrack.core.data.career.ResumeEntity
+import `in`.senthilnathan_dev.sentrack.core.data.career.ChecklistItemEntity
+import `in`.senthilnathan_dev.sentrack.core.data.career.WorkspaceItemEntity
+import `in`.senthilnathan_dev.sentrack.core.data.work.WorkRepository
 import `in`.senthilnathan_dev.sentrack.core.data.reminders.ReminderEntity
 import `in`.senthilnathan_dev.sentrack.core.security.vault.FileVault
 import `in`.senthilnathan_dev.sentrack.core.ui.AppScreen
@@ -57,6 +61,8 @@ private sealed interface CareerRoute {
     data class ResumeEditor(val id: String) : CareerRoute
     data class ResumeFile(val id: String) : CareerRoute
     data class Viewer(val attachmentId: String) : CareerRoute
+    data class WorkspaceEditor(val id: String, val companyId: String?) : CareerRoute
+    data class Checklist(val companyId: String) : CareerRoute
 }
 
 private enum class CareerSection(val label: String, val icon: ImageVector) {
@@ -64,6 +70,7 @@ private enum class CareerSection(val label: String, val icon: ImageVector) {
     CERTS("Certificates", Icons.Filled.Verified),
     JOBS("Job hunt", Icons.Filled.WorkOutline),
     RESUMES("Resumes", Icons.Filled.Description),
+    WORKSPACE("Workspace", Icons.Filled.Apps),
 }
 
 /**
@@ -71,7 +78,7 @@ private enum class CareerSection(val label: String, val icon: ImageVector) {
  * (reminded an hour ahead), and your resume versions. The workspace of apps and sites joins it in a later step.
  */
 @Composable
-fun CareerTab(repo: CareerRepository, reminderRepo: ReminderRepository, files: FileVault, topActions: @Composable RowScope.() -> Unit) {
+fun CareerTab(repo: CareerRepository, workRepo: WorkRepository, reminderRepo: ReminderRepository, files: FileVault, topActions: @Composable RowScope.() -> Unit) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current.applicationContext
     val beginExternalFlow = LocalExternalFlowStarter.current
@@ -83,6 +90,9 @@ fun CareerTab(repo: CareerRepository, reminderRepo: ReminderRepository, files: F
     val interviews by remember(repo) { repo.interviews() }.collectAsState(initial = emptyList())
     val resumes by remember(repo) { repo.resumes() }.collectAsState(initial = emptyList())
     val attachments by remember(repo) { repo.attachments() }.collectAsState(initial = emptyList())
+    val workspace by remember(repo) { repo.workspace() }.collectAsState(initial = emptyList())
+    val checklist by remember(repo) { repo.checklist() }.collectAsState(initial = emptyList())
+    val companies by remember(workRepo) { workRepo.companies() }.collectAsState(initial = emptyList())
     val reminders by remember(reminderRepo) { reminderRepo.reminders() }.collectAsState(initial = emptyList())
 
     var section by rememberSaveable { mutableStateOf(CareerSection.LEARNING) }
@@ -179,7 +189,7 @@ fun CareerTab(repo: CareerRepository, reminderRepo: ReminderRepository, files: F
             "Career",
             actions = topActions,
             bottomBar = {
-                PrimaryTabRow(selectedTabIndex = section.ordinal, containerColor = MaterialTheme.colorScheme.surfaceContainer) {
+                PrimaryScrollableTabRow(selectedTabIndex = section.ordinal, containerColor = MaterialTheme.colorScheme.surfaceContainer, edgePadding = 0.dp) {
                     CareerSection.entries.forEach { s ->
                         Tab(selected = section == s, onClick = { section = s }, text = { Text(s.label, maxLines = 1) }, icon = { Icon(s.icon, contentDescription = null) })
                     }
@@ -191,6 +201,7 @@ fun CareerTab(repo: CareerRepository, reminderRepo: ReminderRepository, files: F
                     CareerSection.CERTS -> "New certificate"
                     CareerSection.JOBS -> "New application"
                     CareerSection.RESUMES -> null
+                    CareerSection.WORKSPACE -> null
                 }
                 if (label != null) ExtendedFloatingActionButton(
                     onClick = {
@@ -212,6 +223,18 @@ fun CareerTab(repo: CareerRepository, reminderRepo: ReminderRepository, files: F
                 CareerSection.LEARNING -> LearningContent(learning) { open(CareerRoute.LearningEditor(it)) }
                 CareerSection.CERTS -> CertificationsContent(certs, attachmentCount = { id -> attachments.count { it.ownerId == id } }) { notice = null; problem = null; open(CareerRoute.CertEditor(it)) }
                 CareerSection.JOBS -> JobsContent(applications, interviews, resumes) { open(CareerRoute.JobEditor(it)) }
+                CareerSection.WORKSPACE -> WorkspaceContent(
+                    items = workspace, companies = companies, notice = problem,
+                    onLaunch = { item ->
+                        problem = null
+                        beginExternalFlow()   // leaving SenTrack on purpose must not lock it
+                        if (AppLauncher.launch(context, item)) scope.launch { repo.recordLaunch(item.id) }
+                        else problem = if (item.kind == "APP") "${item.name} is not installed on this phone." else "Could not open ${item.name}."
+                    },
+                    onEdit = { open(CareerRoute.WorkspaceEditor(it, null)) },
+                    onAdd = { open(CareerRoute.WorkspaceEditor(newId(), it)) },
+                    onOpenChecklists = { open(CareerRoute.Checklist(it)) },
+                )
                 CareerSection.RESUMES -> {
                     `in`.senthilnathan_dev.sentrack.core.ui.Message(problem, `in`.senthilnathan_dev.sentrack.core.ui.MessageKind.ERROR)
                     ResumesContent(
@@ -296,6 +319,28 @@ fun CareerTab(repo: CareerRepository, reminderRepo: ReminderRepository, files: F
             if (r == null) back() else AttachmentViewerScreen(
                 name = r.fileName, mimeType = r.mimeType, vaultFileId = r.vaultFileId, service = attachmentService, files = files,
                 onExport = { export(r.vaultFileId, r.fileName) }, onBack = ::back,
+            )
+        }
+
+        is CareerRoute.WorkspaceEditor -> {
+            val item = workspace.firstOrNull { it.id == current.id }
+            WorkspaceEditorScreen(
+                id = current.id, existing = item, companies = companies, defaultCompanyId = current.companyId,
+                onSave = { w -> scope.launch { repo.saveWorkspaceItem(w) }; back() },
+                onToggleArchive = { item?.let { w -> scope.launch { repo.saveWorkspaceItem(w.copy(archived = !w.archived)) } }; back() },
+                onDelete = { scope.launch { repo.deleteWorkspaceItem(current.id) }; back() },
+                onBack = ::back,
+            )
+        }
+
+        is CareerRoute.Checklist -> {
+            val c = companies.firstOrNull { it.id == current.companyId }
+            if (c == null) back() else ChecklistScreen(
+                company = c, items = checklist, workspace = workspace,
+                onSaveItems = { list -> scope.launch { repo.saveChecklistItems(list) } },
+                onDeleteItem = { scope.launch { repo.deleteChecklistItem(it.id) } },
+                onArchiveWorkspaceItem = { w -> scope.launch { repo.saveWorkspaceItem(w.copy(archived = true)) } },
+                onBack = ::back,
             )
         }
 

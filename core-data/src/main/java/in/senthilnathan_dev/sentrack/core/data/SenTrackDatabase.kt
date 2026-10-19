@@ -10,6 +10,8 @@ import androidx.room.RoomDatabase
 import androidx.room.Upsert
 import `in`.senthilnathan_dev.sentrack.core.data.career.CareerAttachmentEntity
 import `in`.senthilnathan_dev.sentrack.core.data.career.CareerDao
+import `in`.senthilnathan_dev.sentrack.core.data.career.ChecklistItemEntity
+import `in`.senthilnathan_dev.sentrack.core.data.career.WorkspaceItemEntity
 import `in`.senthilnathan_dev.sentrack.core.data.career.CertificationEntity
 import `in`.senthilnathan_dev.sentrack.core.data.career.InterviewEntity
 import `in`.senthilnathan_dev.sentrack.core.data.career.JobApplicationEntity
@@ -112,10 +114,12 @@ interface MetaDao {
         InterviewEntity::class,
         ResumeEntity::class,
         CareerAttachmentEntity::class,
+        WorkspaceItemEntity::class,
+        ChecklistItemEntity::class,
     ],
-    version = 11,
+    version = 12,
     exportSchema = true,
-    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3), AutoMigration(from = 3, to = 5), AutoMigration(from = 5, to = 6), AutoMigration(from = 6, to = 8), AutoMigration(from = 8, to = 11)],
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3), AutoMigration(from = 3, to = 5), AutoMigration(from = 5, to = 6), AutoMigration(from = 6, to = 8), AutoMigration(from = 8, to = 12)],
 )
 abstract class SenTrackDatabase : RoomDatabase() {
     abstract fun metaDao(): MetaDao
