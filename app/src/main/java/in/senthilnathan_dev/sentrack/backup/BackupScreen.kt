@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
@@ -14,6 +17,15 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.filled.LinkOff
+import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.Restore
+import androidx.compose.material.icons.filled.SwitchAccount
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -32,14 +44,15 @@ import androidx.compose.ui.unit.dp
 import `in`.senthilnathan_dev.sentrack.core.sync.NetworkPolicy
 import `in`.senthilnathan_dev.sentrack.core.sync.RemoteBackup
 import `in`.senthilnathan_dev.sentrack.core.sync.ScheduleSpec
-import `in`.senthilnathan_dev.sentrack.ui.components.AppScreen
-import `in`.senthilnathan_dev.sentrack.ui.components.ChoiceRow
-import `in`.senthilnathan_dev.sentrack.ui.components.Message
-import `in`.senthilnathan_dev.sentrack.ui.components.MessageKind
-import `in`.senthilnathan_dev.sentrack.ui.components.PrimaryButton
-import `in`.senthilnathan_dev.sentrack.ui.components.SecondaryButton
-import `in`.senthilnathan_dev.sentrack.ui.components.Section
-import `in`.senthilnathan_dev.sentrack.ui.components.SwitchRow
+import `in`.senthilnathan_dev.sentrack.core.ui.AppScreen
+import `in`.senthilnathan_dev.sentrack.core.ui.ChoiceRow
+import `in`.senthilnathan_dev.sentrack.core.ui.Message
+import `in`.senthilnathan_dev.sentrack.core.ui.MessageKind
+import `in`.senthilnathan_dev.sentrack.core.ui.IconAction
+import `in`.senthilnathan_dev.sentrack.core.ui.PrimaryButton
+import `in`.senthilnathan_dev.sentrack.core.ui.SecondaryButton
+import `in`.senthilnathan_dev.sentrack.core.ui.Section
+import `in`.senthilnathan_dev.sentrack.core.ui.SwitchRow
 import java.time.DayOfWeek
 import java.time.LocalTime
 import java.time.format.TextStyle
@@ -83,7 +96,7 @@ fun BackupScreen(state: BackupUiState, actions: BackupActions) {
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Message(state.lastError, MessageKind.ERROR)
-                PrimaryButton(if (state.busy) "Working…" else "Back up now", onClick = actions.onBackupNow, busy = state.busy)
+                PrimaryButton(if (state.busy) "Working…" else "Back up now", onClick = actions.onBackupNow, busy = state.busy, icon = Icons.Filled.CloudUpload)
             }
 
             AutomaticSection(state, actions)
@@ -106,8 +119,8 @@ fun BackupScreen(state: BackupUiState, actions: BackupActions) {
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text("Keep the last ${state.retention} backups", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-                    OutlinedButton(onClick = { actions.onSetRetention(state.retention - 1) }) { Text("−") }
-                    OutlinedButton(onClick = { actions.onSetRetention(state.retention + 1) }) { Text("+") }
+                    IconAction(Icons.Filled.Remove, "Keep fewer backups", { actions.onSetRetention(state.retention - 1) })
+                    IconAction(Icons.Filled.Add, "Keep more backups", { actions.onSetRetention(state.retention + 1) })
                 }
             }
         }
@@ -143,8 +156,8 @@ private fun AccountSection(state: BackupUiState, actions: BackupActions) {
                 style = MaterialTheme.typography.titleMedium,
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = actions.onChooseAccount, enabled = !state.busy) { Text("Switch account") }
-                TextButton(onClick = actions.onDisconnect, enabled = !state.busy) { Text("Disconnect") }
+                OutlinedButton(onClick = actions.onChooseAccount, enabled = !state.busy) { Icon(Icons.Filled.SwitchAccount, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text("Switch account") }
+                IconAction(Icons.Filled.LinkOff, "Disconnect Google Drive", actions.onDisconnect, enabled = !state.busy)
             }
             Text(
                 "Switching shows the other account's backups. Backups already made stay in the first account's Drive.",
@@ -152,7 +165,7 @@ private fun AccountSection(state: BackupUiState, actions: BackupActions) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         } else {
-            PrimaryButton(if (state.busy) "Connecting…" else "Choose Google account", onClick = actions.onChooseAccount, busy = state.busy)
+            PrimaryButton(if (state.busy) "Connecting…" else "Choose Google account", onClick = actions.onChooseAccount, busy = state.busy, icon = Icons.Filled.AccountCircle)
         }
     }
 }
@@ -245,7 +258,7 @@ private fun AutomaticSection(state: BackupUiState, actions: BackupActions) {
                         FilterChip(
                             selected = selected,
                             onClick = {
-                                val next = if (selected) weekly!!.days - day else (weekly?.days ?: emptySet()) + day
+                                val next = if (selected) weekly.days - day else (weekly?.days ?: emptySet()) + day
                                 if (next.isNotEmpty()) actions.onSetSchedule(ScheduleSpec.Weekly(next, timeOf(spec)))
                             },
                             label = { Text(day.getDisplayName(TextStyle.SHORT, Locale.ENGLISH)) },
@@ -263,8 +276,8 @@ private fun AutomaticSection(state: BackupUiState, actions: BackupActions) {
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text("On the ${ScheduleSpec.ordinal(day)} of each month", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-                    OutlinedButton(onClick = { monthly?.let { actions.onSetSchedule(it.copy(dayOfMonth = (day - 1).coerceAtLeast(1))) } }) { Text("−") }
-                    OutlinedButton(onClick = { monthly?.let { actions.onSetSchedule(it.copy(dayOfMonth = (day + 1).coerceAtMost(28))) } }) { Text("+") }
+                    IconAction(Icons.Filled.Remove, "Earlier day of the month", { monthly?.let { actions.onSetSchedule(it.copy(dayOfMonth = (day - 1).coerceAtLeast(1))) } })
+                    IconAction(Icons.Filled.Add, "Later day of the month", { monthly?.let { actions.onSetSchedule(it.copy(dayOfMonth = (day + 1).coerceAtMost(28))) } })
                 }
                 Text(
                     "Days 29 to 31 are not offered because not every month has them.",
@@ -345,7 +358,7 @@ private fun BackupsInDriveSection(state: BackupUiState, actions: BackupActions) 
                         modifier = Modifier.weight(1f),
                         style = MaterialTheme.typography.bodyMedium,
                     )
-                    TextButton(onClick = { actions.onAskRestore(b) }, enabled = !state.busy) { Text("Restore") }
+                    IconAction(Icons.Filled.Restore, "Restore this backup", { actions.onAskRestore(b) }, enabled = !state.busy)
                 }
             }
         }

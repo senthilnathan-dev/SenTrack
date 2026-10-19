@@ -27,7 +27,7 @@ ksp {
 dependencies {
     implementation(project(":core-security"))
     api(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx)
+    api(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
     // SQLCipher: AES-256 encryption of the whole database file (data, indexes, journal).
     implementation(libs.sqlcipher.android)

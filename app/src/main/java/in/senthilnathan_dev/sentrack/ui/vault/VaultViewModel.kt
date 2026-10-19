@@ -15,7 +15,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import `in`.senthilnathan_dev.sentrack.core.data.MetaEntry
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -34,8 +33,6 @@ data class VaultUiState(
     val recoveryCode: String? = null,
     val biometricAvailable: Boolean = false,
     val biometricEnabled: Boolean = false,
-    /** Phase 1 proof that the encrypted database opens: how many times it has been opened. */
-    val dbOpenCount: Int? = null,
 )
 
 /** Drives setup, unlock, recovery and lock screens. Heavy key derivation runs off the main thread. */
@@ -204,19 +201,6 @@ class VaultViewModel(app: Application) : AndroidViewModel(app) {
                 UnlockResult.WRONG_CREDENTIALS -> { registerFailure(); fail("That recovery code is not valid.") }
                 else -> fail("The vault could not be opened.")
             }
-        }
-    }
-
-    /** Opens the encrypted database, bumps a counter and shows it (temporary Phase 1 check). */
-    fun checkDatabase() {
-        viewModelScope.launch {
-            val count = withContext(Dispatchers.IO) {
-                val dao = container.database.get().metaDao()
-                val next = (dao.get("open_count")?.toIntOrNull() ?: 0) + 1
-                dao.put(MetaEntry("open_count", next.toString()))
-                next
-            }
-            _state.update { it.copy(dbOpenCount = count) }
         }
     }
 

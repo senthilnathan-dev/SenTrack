@@ -17,3 +17,11 @@ Rules
 - Plain language: never show technical syntax as the main way to choose something (schedules use "Every day at 9:30 PM"; cron is an Advanced option)
 - Every error shown to the user says what happened and what to do next
 - Light, dark and system themes must both look right
+
+## One-handed use (Material 3, One UI style)
+- Large collapsing header (`AppScreen`): the title area pushes content down toward the thumb and collapses on scroll
+- Navigation lives at the bottom: the module bar (Finance, Personal, Work) and, inside Finance, the section tabs (Dashboard, Accounts, Activity) stacked directly above it
+- Main actions are pinned at the bottom (`ActionBar`: Save and its error message) or float bottom-right (Add entry)
+- Frequent actions use icons (settings, lock, edit, archive, delete, restore); rarely used or ambiguous actions keep a text label next to the icon
+- Archived items are hidden by default and reached through an archive button that opens its own page
+- `LocalBottomInsetHandled` tells screens inside the shell not to pad for the system navigation bar twice

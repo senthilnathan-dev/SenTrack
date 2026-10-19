@@ -6,6 +6,7 @@ import `in`.senthilnathan_dev.sentrack.backup.BackupScheduler
 import `in`.senthilnathan_dev.sentrack.backup.BackupSettings
 import `in`.senthilnathan_dev.sentrack.backup.DriveAuthorizer
 import `in`.senthilnathan_dev.sentrack.core.data.DatabaseHolder
+import `in`.senthilnathan_dev.sentrack.core.data.finance.FinanceRepository
 import `in`.senthilnathan_dev.sentrack.core.security.biometric.BiometricUnlock
 import `in`.senthilnathan_dev.sentrack.core.security.vault.FileVault
 import `in`.senthilnathan_dev.sentrack.core.security.vault.VaultManager
@@ -22,6 +23,9 @@ class AppContainer(app: Application) {
     val biometric = BiometricUnlock(app, vault)
     val database = DatabaseHolder(app, session)
     val settings = SecuritySettings(app)
+
+    /** Finance data access (accounts, transactions, budgets, goals). */
+    val finance = FinanceRepository(database)
 
     /** Encrypted attachment store. Lives in `noBackupFilesDir`, like the vault header. */
     val files = FileVault(File(app.noBackupFilesDir, "vault_files"), session)

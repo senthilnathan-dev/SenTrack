@@ -5,6 +5,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.filled.Fingerprint
+import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.LockOpen
+import androidx.compose.material.icons.filled.Password
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -23,17 +31,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import `in`.senthilnathan_dev.sentrack.security.SecuritySettings
-import `in`.senthilnathan_dev.sentrack.ui.components.AppScreen
-import `in`.senthilnathan_dev.sentrack.ui.components.CenteredScreen
-import `in`.senthilnathan_dev.sentrack.ui.components.ChoiceRow
-import `in`.senthilnathan_dev.sentrack.ui.components.Message
-import `in`.senthilnathan_dev.sentrack.ui.components.MessageKind
-import `in`.senthilnathan_dev.sentrack.ui.components.NavRow
-import `in`.senthilnathan_dev.sentrack.ui.components.PrimaryButton
-import `in`.senthilnathan_dev.sentrack.ui.components.SecondaryButton
-import `in`.senthilnathan_dev.sentrack.ui.components.SecretField
-import `in`.senthilnathan_dev.sentrack.ui.components.Section
-import `in`.senthilnathan_dev.sentrack.ui.components.SwitchRow
+import `in`.senthilnathan_dev.sentrack.core.ui.AppScreen
+import `in`.senthilnathan_dev.sentrack.core.ui.CenteredScreen
+import `in`.senthilnathan_dev.sentrack.core.ui.ChoiceRow
+import `in`.senthilnathan_dev.sentrack.core.ui.Message
+import `in`.senthilnathan_dev.sentrack.core.ui.MessageKind
+import `in`.senthilnathan_dev.sentrack.core.ui.NavRow
+import `in`.senthilnathan_dev.sentrack.core.ui.PrimaryButton
+import `in`.senthilnathan_dev.sentrack.core.ui.SecondaryButton
+import `in`.senthilnathan_dev.sentrack.core.ui.SecretField
+import `in`.senthilnathan_dev.sentrack.core.ui.Section
+import `in`.senthilnathan_dev.sentrack.core.ui.SwitchRow
 
 // ---- Sign-in style screens (centred, no top bar)
 
@@ -51,7 +59,7 @@ fun SetupScreen(state: VaultUiState, onCreate: (String, String) -> Unit, onResto
         SecretField("Passphrase (12+ characters)", pass, { pass = it }, !state.busy)
         SecretField("Confirm passphrase", confirm, { confirm = it }, !state.busy)
         Message(state.error, MessageKind.ERROR)
-        PrimaryButton(if (state.busy) "Creating…" else "Create vault", onClick = { onCreate(pass, confirm) }, busy = state.busy)
+        PrimaryButton(if (state.busy) "Creating…" else "Create vault", onClick = { onCreate(pass, confirm) }, busy = state.busy, icon = Icons.Filled.Lock)
         TextButton(onClick = onRestore, enabled = !state.busy, modifier = Modifier.fillMaxWidth()) {
             Text("Already use SenTrack? Restore from Google Drive")
         }
@@ -87,7 +95,7 @@ fun RecoveryCodeScreen(code: String, onDone: () -> Unit) {
             Checkbox(checked = saved, onCheckedChange = { saved = it })
             Text("I have saved my recovery code")
         }
-        PrimaryButton("Continue", onClick = onDone, enabled = saved)
+        PrimaryButton("Continue", onClick = onDone, enabled = saved, icon = Icons.Filled.Check)
     }
 }
 
@@ -108,13 +116,13 @@ fun LockScreen(
         if (state.passphraseSlotMissing) {
             // Restored from a recovery-only backup: there is no passphrase yet, so only the recovery path works.
             Message(state.error, MessageKind.ERROR)
-            PrimaryButton("Enter recovery code", onClick = onForgot)
+            PrimaryButton("Enter recovery code", onClick = onForgot, icon = Icons.Filled.Key)
         } else {
             SecretField("Passphrase", pass, { pass = it }, !state.busy)
             Message(state.error, MessageKind.ERROR)
-            PrimaryButton(if (state.busy) "Unlocking…" else "Unlock", onClick = { onUnlock(pass); pass = "" }, busy = state.busy)
+            PrimaryButton(if (state.busy) "Unlocking…" else "Unlock", onClick = { onUnlock(pass); pass = "" }, busy = state.busy, icon = Icons.Filled.LockOpen)
             if (state.biometricEnabled && state.biometricAvailable) {
-                SecondaryButton("Use biometrics", onClick = onBiometric, enabled = !state.busy)
+                SecondaryButton("Use biometrics", onClick = onBiometric, enabled = !state.busy, icon = Icons.Filled.Fingerprint)
             }
             TextButton(onClick = onForgot, modifier = Modifier.fillMaxWidth()) { Text("Forgot passphrase? Use recovery code") }
         }
@@ -140,37 +148,12 @@ fun RecoverScreen(state: VaultUiState, onRecover: (String, String, String) -> Un
         SecretField("New passphrase (12+ characters)", pass, { pass = it }, !state.busy)
         SecretField("Confirm new passphrase", confirm, { confirm = it }, !state.busy)
         Message(state.error, MessageKind.ERROR)
-        PrimaryButton(if (state.busy) "Recovering…" else "Recover", onClick = { onRecover(code, pass, confirm) }, busy = state.busy)
+        PrimaryButton(if (state.busy) "Recovering…" else "Recover", onClick = { onRecover(code, pass, confirm) }, busy = state.busy, icon = Icons.Filled.Key)
         TextButton(onClick = onCancel, modifier = Modifier.fillMaxWidth()) { Text("Back") }
     }
 }
 
 // ---- Screens inside the unlocked app (top bar + sections)
-
-/** Temporary Phase 1 home: proves unlock works. Replaced by the real dashboard in Phase 3+. */
-@Composable
-fun UnlockedHome(
-    state: VaultUiState,
-    onLock: () -> Unit,
-    onOpenSettings: () -> Unit,
-    onCheckDatabase: () -> Unit,
-) {
-    LaunchedEffect(Unit) { onCheckDatabase() }
-    AppScreen("SenTrack") {
-        Section("Status") {
-            Text("Your vault is unlocked. Finance, Personal and Work modules arrive in the next phases.")
-            Text(
-                "Encrypted database opened ${state.dbOpenCount ?: "…"} time(s).",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        Section("Quick actions") {
-            PrimaryButton("Lock now", onClick = onLock)
-            SecondaryButton("Settings", onClick = onOpenSettings)
-        }
-    }
-}
 
 /** Settings: auto-lock timing, biometrics, passphrase, recovery code and the link to backups. */
 @Composable
@@ -196,6 +179,7 @@ fun SecuritySettingsScreen(
         Section("Unlocking") {
             if (state.biometricAvailable) {
                 SwitchRow(
+                    icon = Icons.Filled.Fingerprint,
                     title = "Biometric unlock",
                     subtitle = "Use your fingerprint or face instead of typing the passphrase.",
                     checked = state.biometricEnabled,
@@ -203,18 +187,18 @@ fun SecuritySettingsScreen(
                     onChange = { onToggleBiometric() },
                 )
             }
-            NavRow("Change passphrase", "Your data is not re-encrypted, so this is quick.", onChangePassphrase)
+            NavRow("Change passphrase", "Your data is not re-encrypted, so this is quick.", onChangePassphrase, Icons.Filled.Password)
         }
 
         Section(
             "Recovery code",
             "The only way back in if you forget your passphrase. Creating a new one makes the old one stop working.",
         ) {
-            SecondaryButton("Generate new recovery code", onClick = onNewRecoveryCode, enabled = !state.busy)
+            SecondaryButton("Generate new recovery code", onClick = onNewRecoveryCode, enabled = !state.busy, icon = Icons.Filled.Key)
         }
 
         Section("Backup") {
-            NavRow("Backup to Google Drive", "Account, automatic schedule and restore", onOpenBackup)
+            NavRow("Backup to Google Drive", "Account, automatic schedule and restore", onOpenBackup, Icons.Filled.CloudUpload)
         }
     }
 }

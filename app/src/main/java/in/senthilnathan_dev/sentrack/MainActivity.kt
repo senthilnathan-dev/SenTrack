@@ -10,6 +10,7 @@ import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -27,7 +28,7 @@ import `in`.senthilnathan_dev.sentrack.ui.vault.RecoveryCodeScreen
 import `in`.senthilnathan_dev.sentrack.ui.vault.SecuritySettingsScreen
 import `in`.senthilnathan_dev.sentrack.ui.vault.SetupScreen
 import `in`.senthilnathan_dev.sentrack.ui.vault.Stage
-import `in`.senthilnathan_dev.sentrack.ui.vault.UnlockedHome
+import `in`.senthilnathan_dev.sentrack.ui.shell.UnlockedShell
 import `in`.senthilnathan_dev.sentrack.ui.vault.VaultViewModel
 
 /**
@@ -64,7 +65,8 @@ class MainActivity : FragmentActivity() {
         enableEdgeToEdge()
         setContent {
             SenTrackTheme {
-                Surface(modifier = Modifier.fillMaxSize()) {
+                // The keyboard inset is applied once, here: the whole screen shrinks above the keyboard (no double spacing).
+                Surface(modifier = Modifier.fillMaxSize().imePadding()) {
                     val state by vaultViewModel.state.collectAsState()
                     when (state.stage) {
                         Stage.SETUP -> SetupScreen(state, vaultViewModel::createVault, vaultViewModel::openBackup)
@@ -80,11 +82,10 @@ class MainActivity : FragmentActivity() {
                             onShown = vaultViewModel::refreshBiometricState,
                         )
                         Stage.RECOVER -> RecoverScreen(state, vaultViewModel::recover, vaultViewModel::cancelRecover)
-                        Stage.UNLOCKED -> UnlockedHome(
-                            state = state,
+                        Stage.UNLOCKED -> UnlockedShell(
+                            finance = (application as SenTrackApp).container.finance,
                             onLock = vaultViewModel::lock,
                             onOpenSettings = vaultViewModel::openSettings,
-                            onCheckDatabase = vaultViewModel::checkDatabase,
                         )
                         Stage.SETTINGS -> {
                             BackHandler(onBack = vaultViewModel::closeSettings)
