@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.material3.Icon
@@ -25,6 +26,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import `in`.senthilnathan_dev.sentrack.core.alerts.ReminderCenter
+import `in`.senthilnathan_dev.sentrack.core.alerts.ReminderRepository
 import `in`.senthilnathan_dev.sentrack.core.data.finance.FinanceRepository
 import `in`.senthilnathan_dev.sentrack.core.security.vault.FileVault
 import `in`.senthilnathan_dev.sentrack.core.ui.AppScreen
@@ -33,6 +36,7 @@ import `in`.senthilnathan_dev.sentrack.core.ui.LocalBottomInsetHandled
 import `in`.senthilnathan_dev.sentrack.core.ui.LocalExternalFlowStarter
 import `in`.senthilnathan_dev.sentrack.core.ui.Section
 import `in`.senthilnathan_dev.sentrack.feature.finance.FinanceTab
+import `in`.senthilnathan_dev.sentrack.feature.reminders.RemindersScreen
 
 private enum class Tab(val label: String, val icon: ImageVector) {
     FINANCE("Finance", Icons.Filled.AccountBalance),
@@ -49,12 +53,16 @@ private enum class Tab(val label: String, val icon: ImageVector) {
 fun UnlockedShell(
     finance: FinanceRepository,
     files: FileVault,
+    reminders: ReminderRepository,
+    reminderCenter: ReminderCenter,
     onLock: () -> Unit,
     onOpenSettings: () -> Unit,
     onExternalFlow: () -> Unit,
 ) {
     var selected by rememberSaveable { mutableStateOf(Tab.FINANCE) }
+    var showReminders by rememberSaveable { mutableStateOf(false) }
     val topActions: @Composable RowScope.() -> Unit = {
+        IconAction(Icons.Filled.Notifications, "Reminders", { showReminders = true })
         IconAction(Icons.Filled.Settings, "Settings", onOpenSettings)
         IconAction(Icons.Filled.Lock, "Lock now", onLock)
     }
@@ -81,6 +89,10 @@ fun UnlockedShell(
         // The bottom bar above already pads for the system navigation bar, so screens inside must not pad again.
         CompositionLocalProvider(LocalBottomInsetHandled provides true, LocalExternalFlowStarter provides onExternalFlow) {
             Box(modifier = Modifier.padding(padding)) {
+                if (showReminders) {
+                    RemindersScreen(reminders, reminderCenter, onBack = { showReminders = false })
+                    return@Box
+                }
                 when (selected) {
                     Tab.FINANCE -> FinanceTab(finance, files, topActions)
                     Tab.PERSONAL -> ComingSoon(

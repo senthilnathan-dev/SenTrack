@@ -108,4 +108,29 @@ class ScheduleSpecTest {
         val weekly = ScheduleSpec.Weekly(setOf(DayOfWeek.WEDNESDAY), at930pm)
         assertEquals(ZonedDateTime.of(2026, 10, 21, 21, 30, 0, 0, ZoneOffset.UTC), CronSchedule.parse(weekly.toCron()).nextAfter(from))
     }
+
+    @Test
+    fun yearly_cronSentenceAndRoundTrip() {
+        val s = ScheduleSpec.Yearly(3, 14, LocalTime.of(9, 0))
+        assertEquals("0 9 14 3 *", s.toCron())
+        assertEquals("Every year on 14 Mar at 9:00 AM", s.describe())
+        assertEquals(s, ScheduleSpec.decode(s.encode()))
+        val from = ZonedDateTime.of(2026, 10, 19, 10, 0, 0, 0, ZoneOffset.UTC)
+        assertEquals(ZonedDateTime.of(2027, 3, 14, 9, 0, 0, 0, ZoneOffset.UTC), CronSchedule.parse(s.toCron()).nextAfter(from))
+    }
+
+    @Test
+    fun yearly_rejectsImpossibleDates_butAllowsLeapDay() {
+        try {
+            ScheduleSpec.Yearly(2, 30, LocalTime.NOON); fail()
+        } catch (_: IllegalArgumentException) {
+        }
+        try {
+            ScheduleSpec.Yearly(13, 1, LocalTime.NOON); fail()
+        } catch (_: IllegalArgumentException) {
+        }
+        val leap = ScheduleSpec.Yearly(2, 29, LocalTime.of(8, 0))
+        val from = ZonedDateTime.of(2026, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)
+        assertEquals(ZonedDateTime.of(2028, 2, 29, 8, 0, 0, 0, ZoneOffset.UTC), CronSchedule.parse(leap.toCron()).nextAfter(from))
+    }
 }

@@ -2,6 +2,8 @@ package `in`.senthilnathan_dev.sentrack.core.sync
 
 import java.time.DayOfWeek
 import java.time.LocalTime
+import java.time.Month
+import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
 
@@ -63,6 +65,19 @@ sealed interface ScheduleSpec {
         override fun encode() = "M|$dayOfMonth|${time.hour}:${time.minute}"
     }
 
+    /** Once a year on a fixed date (birthdays, anniversaries, renewals). 29 February is allowed and then only runs in leap years. */
+    data class Yearly(val month: Int, val day: Int, val time: LocalTime) : ScheduleSpec {
+        init {
+            require(month in 1..12) { "Month must be 1 to 12" }
+            require(day in 1..YearMonth.of(2024, month).lengthOfMonth()) { "No such day in that month" }
+        }
+
+        override fun toCron() = "${time.minute} ${time.hour} $day $month *"
+        override fun describe() =
+            "Every year on $day ${Month.of(month).getDisplayName(TextStyle.SHORT, Locale.ENGLISH)} at ${formatTime(time)}"
+        override fun encode() = "Y|$month|$day|${time.hour}:${time.minute}"
+    }
+
     /** A raw cron expression, for people who know what they want. */
     data class Custom(val cron: String) : ScheduleSpec {
         init {
@@ -88,6 +103,7 @@ sealed interface ScheduleSpec {
                 "D" -> Daily(time(parts[1]))
                 "W" -> Weekly(parts[1].split(',').map { DayOfWeek.of(it.toInt()) }.toSet(), time(parts[2]))
                 "M" -> Monthly(parts[1].toInt(), time(parts[2]))
+                "Y" -> Yearly(parts[1].toInt(), parts[2].toInt(), time(parts[3]))
                 "C" -> Custom(parts.drop(1).joinToString("|"))
                 else -> null
             }

@@ -17,6 +17,8 @@ import `in`.senthilnathan_dev.sentrack.core.data.finance.GoalEntity
 import `in`.senthilnathan_dev.sentrack.core.data.finance.TaxDocumentEntity
 import `in`.senthilnathan_dev.sentrack.core.data.finance.TaxFilingEntity
 import `in`.senthilnathan_dev.sentrack.core.data.finance.TransactionEntity
+import `in`.senthilnathan_dev.sentrack.core.data.reminders.ReminderDao
+import `in`.senthilnathan_dev.sentrack.core.data.reminders.ReminderEntity
 
 /** Simple key/value settings stored inside the encrypted database (counters, flags, versions). */
 @Entity(tableName = "meta")
@@ -51,12 +53,14 @@ interface MetaDao {
         GoalAccountEntity::class,
         TaxFilingEntity::class,
         TaxDocumentEntity::class,
+        ReminderEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
-    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3), AutoMigration(from = 3, to = 4)],
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3), AutoMigration(from = 3, to = 4), AutoMigration(from = 4, to = 5)],
 )
 abstract class SenTrackDatabase : RoomDatabase() {
     abstract fun metaDao(): MetaDao
     abstract fun financeDao(): FinanceDao
+    abstract fun reminderDao(): ReminderDao
 }

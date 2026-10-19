@@ -3,6 +3,12 @@ package `in`.senthilnathan_dev.sentrack.security
 import android.app.Application
 import `in`.senthilnathan_dev.sentrack.backup.BackupManager
 import `in`.senthilnathan_dev.sentrack.backup.BackupScheduler
+import `in`.senthilnathan_dev.sentrack.core.alerts.ReminderCenter
+import `in`.senthilnathan_dev.sentrack.core.alerts.ReminderRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import `in`.senthilnathan_dev.sentrack.backup.BackupSettings
 import `in`.senthilnathan_dev.sentrack.backup.DriveAuthorizer
 import `in`.senthilnathan_dev.sentrack.core.data.DatabaseHolder
@@ -34,6 +40,19 @@ class AppContainer(app: Application) {
 
     /** Finance data access (accounts, transactions, budgets, goals, tax filings). */
     val finance = FinanceRepository(database)
+
+    /** Reminders: alarms that ring even while locked (engine) and their encrypted records (repository). */
+    val reminderCenter = ReminderCenter(app)
+    val reminders = ReminderRepository(database, reminderCenter)
+
+    private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    init {
+        // After every unlock, record reminders that rang while locked and refresh the alarm list.
+        session.addListener { unlocked ->
+            if (unlocked) appScope.launch { runCatching { reminders.reconcile() } }
+        }
+    }
 
     /** Encrypted attachment store. Lives in `noBackupFilesDir`, like the vault header. */
     val files = FileVault(File(app.noBackupFilesDir, "vault_files"), session)

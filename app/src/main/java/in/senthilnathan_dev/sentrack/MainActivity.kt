@@ -87,6 +87,8 @@ class MainActivity : FragmentActivity() {
                         Stage.UNLOCKED -> UnlockedShell(
                             finance = (application as SenTrackApp).container.finance,
                             files = (application as SenTrackApp).container.files,
+                            reminders = (application as SenTrackApp).container.reminders,
+                            reminderCenter = (application as SenTrackApp).container.reminderCenter,
                             onExternalFlow = { (application as SenTrackApp).container.beginExternalFlow() },
                             onLock = vaultViewModel::lock,
                             onOpenSettings = vaultViewModel::openSettings,

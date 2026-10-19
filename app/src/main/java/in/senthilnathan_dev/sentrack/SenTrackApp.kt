@@ -13,6 +13,8 @@ class SenTrackApp : Application() {
         super.onCreate()
         container = AppContainer(this)
         AutoLocker(this, container).install()
+        // Notification channels, and make sure every stored alarm is scheduled (cheap; needs no unlock).
+        container.reminderCenter.rescheduleAll()
         // Make sure a next scheduled backup is queued (KEEP: never disturbs one that is already waiting or running).
         container.backupScheduler.reschedule(androidx.work.ExistingWorkPolicy.KEEP)
     }

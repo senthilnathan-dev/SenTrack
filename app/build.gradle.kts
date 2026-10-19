@@ -42,6 +42,8 @@ dependencies {
     implementation(project(":core-sync"))
     implementation(project(":core-ui"))
     implementation(project(":feature-finance"))
+    implementation(project(":core-alerts"))
+    implementation(project(":feature-reminders"))
     implementation(libs.play.services.auth)
     implementation(libs.androidx.work.runtime)
     implementation(libs.androidx.fragment)
