@@ -16,8 +16,11 @@ sealed interface AiResult {
  * assistant screen, and the screen shows the exact text first. No data is kept by SenTrack beyond the screen.
  */
 object AiClient {
-    suspend fun ask(provider: AiProvider, model: String, key: String, prompt: String): AiResult = withContext(Dispatchers.IO) {
-        val spec = AiProtocol.request(provider, model, key, prompt)
+    suspend fun ask(
+        provider: AiProvider, model: String, key: String, prompt: String,
+        system: String = "", temperature: Double? = null, maxTokens: Int = 1500,
+    ): AiResult = withContext(Dispatchers.IO) {
+        val spec = AiProtocol.request(provider, model, key, prompt, system, temperature, maxTokens)
         var connection: HttpURLConnection? = null
         try {
             connection = (URL(spec.url).openConnection() as HttpURLConnection).apply {

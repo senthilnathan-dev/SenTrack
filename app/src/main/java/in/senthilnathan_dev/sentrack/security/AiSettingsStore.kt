@@ -44,6 +44,9 @@ class AiSettingsStore(private val holder: DatabaseHolder) {
         summary = get("ai.local.summary")?.split('\n')?.filter { it.isNotBlank() } ?: emptyList(),
     )
 
+    suspend fun styleId(): String? = get("ai.style")
+    suspend fun setStyle(id: String) = put("ai.style", id)
+
     suspend fun setLocalEnabled(enabled: Boolean) = put("ai.local.enabled", if (enabled) "1" else "0")
 
     /** Remembers which model was tested and how it did, so the verdict survives restarts. */

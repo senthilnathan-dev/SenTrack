@@ -42,6 +42,8 @@ import `in`.senthilnathan_dev.sentrack.core.data.career.CareerAttachmentEntity
 import `in`.senthilnathan_dev.sentrack.core.data.career.CertificationEntity
 import `in`.senthilnathan_dev.sentrack.core.data.career.LearningItemEntity
 import `in`.senthilnathan_dev.sentrack.core.ui.ActionBar
+import `in`.senthilnathan_dev.sentrack.core.ui.AiAssistButton
+import `in`.senthilnathan_dev.sentrack.core.ui.AiUse
 import `in`.senthilnathan_dev.sentrack.core.ui.AppScreen
 import `in`.senthilnathan_dev.sentrack.core.ui.DateField
 import `in`.senthilnathan_dev.sentrack.core.ui.IconAction
@@ -182,7 +184,15 @@ internal fun LearningEditorScreen(
     AppScreen(
         if (existing == null) "New learning" else "Learning",
         onBack = onBack,
-        actions = { ArchiveDeleteActions(existing?.archived, onToggleArchive) { confirmDelete = true } },
+        actions = {
+            AiAssistButton(
+                uses = listOf(AiUse.STUDY_PLAN),
+                text = { listOfNotNull(title.ifBlank { null }, provider.ifBlank { null }?.let { "by $it" }).joinToString(" ") },
+                onApply = { _, result -> note = (note.trim() + "\n\n" + result).trim() },
+                applyLabel = { "Add to notes" },
+            )
+            ArchiveDeleteActions(existing?.archived, onToggleArchive) { confirmDelete = true }
+        },
         bottomBar = {
             ActionBar {
                 Message(error, MessageKind.ERROR)

@@ -34,6 +34,7 @@ import `in`.senthilnathan_dev.sentrack.core.ai.AiProvider
 import `in`.senthilnathan_dev.sentrack.core.ai.AiResult
 import `in`.senthilnathan_dev.sentrack.core.ai.AiTask
 import `in`.senthilnathan_dev.sentrack.core.ui.AppScreen
+import `in`.senthilnathan_dev.sentrack.core.ui.ChoiceRow
 import `in`.senthilnathan_dev.sentrack.core.ui.Message
 import `in`.senthilnathan_dev.sentrack.core.ui.MessageKind
 import `in`.senthilnathan_dev.sentrack.core.ui.NavRow
@@ -46,6 +47,7 @@ import `in`.senthilnathan_dev.sentrack.security.AiSettings
 import `in`.senthilnathan_dev.sentrack.security.LocalAiState
 import `in`.senthilnathan_dev.sentrack.core.ai.local.LocalLlm
 import `in`.senthilnathan_dev.sentrack.core.ai.local.Verdict
+import `in`.senthilnathan_dev.sentrack.core.ai.assist.Style
 import kotlinx.coroutines.launch
 
 private enum class AiPage { SETTINGS, ASSISTANT, LOCAL }
@@ -64,7 +66,8 @@ fun AiHost(onBack: () -> Unit) {
     var message by remember { mutableStateOf<String?>(null) }
     var local by remember { mutableStateOf<LocalAiState?>(null) }
     BackHandler { if (page != AiPage.SETTINGS) page = AiPage.SETTINGS else onBack() }
-    suspend fun reload() { settings = store.load(); local = store.loadLocal() }
+    var styleId by remember { mutableStateOf("normal") }
+    suspend fun reload() { settings = store.load(); local = store.loadLocal(); styleId = store.styleId() ?: "normal" }
     LaunchedEffect(Unit) { reload() }
     val s = settings
 
@@ -126,6 +129,16 @@ fun AiHost(onBack: () -> Unit) {
                         },
                         { page = AiPage.LOCAL }, Icons.Filled.AutoAwesome,
                     )
+                }
+                Section(
+                    "Answer style",
+                    "Choose speed or care. This sets how adventurous the model is with words, how long it may talk, and whether it checks its own answer. You can also change it for a single request.",
+                ) {
+                    Style.entries.forEach { st ->
+                        ChoiceRow(st.label, selected = Style.of(styleId) == st, subtitle = st.blurb) {
+                            scope.launch { store.setStyle(st.id); reload() }
+                        }
+                    }
                 }
                 Section("Use it") {
                     val ready = s.enabled && (s.hasKey || localReady)

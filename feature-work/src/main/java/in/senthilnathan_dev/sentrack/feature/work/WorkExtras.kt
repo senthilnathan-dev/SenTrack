@@ -47,6 +47,8 @@ import `in`.senthilnathan_dev.sentrack.core.data.work.WorkAttachmentEntity
 import `in`.senthilnathan_dev.sentrack.core.data.work.WorkPermissionEntity
 import `in`.senthilnathan_dev.sentrack.core.data.work.WorkTaskEntity
 import `in`.senthilnathan_dev.sentrack.core.ui.ActionBar
+import `in`.senthilnathan_dev.sentrack.core.ui.AiAssistButton
+import `in`.senthilnathan_dev.sentrack.core.ui.AiUse
 import `in`.senthilnathan_dev.sentrack.core.ui.AppScreen
 import `in`.senthilnathan_dev.sentrack.core.ui.DateField
 import `in`.senthilnathan_dev.sentrack.core.ui.IconAction
@@ -101,6 +103,21 @@ internal fun ColumnScope.DailySummary(tasks: List<WorkTaskEntity>, permissionsTo
         if (doneToday > 0) Text("Finished today: $doneToday", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         permissionsToday.forEach { Text("Permission: ${it.category}${it.minutes?.let { m -> " ($m min)" } ?: ""}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         if (open > 0) SecondaryButton("Open tasks", onClick = onOpenTasks)
+        if (open > 1) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Not sure where to start?", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                AiAssistButton(
+                    uses = listOf(AiUse.DAY_PLAN),
+                    text = {
+                        tasks.filter { it.status != "DONE" }.joinToString("\n") { t ->
+                            "- ${t.title}" + (TaskMath.dueText(t, today)?.let { " ($it)" } ?: "") + (if (t.priority >= 2) " [priority]" else "")
+                        }
+                    },
+                    onApply = { _, _ -> },
+                    applyLabel = { "Got it" },
+                )
+            }
+        }
     }
 }
 
@@ -178,7 +195,15 @@ internal fun TaskEditorScreen(
     AppScreen(
         if (existing == null) "New task" else "Edit task",
         onBack = onBack,
-        actions = { if (existing != null) IconAction(Icons.Filled.Delete, "Delete task", { confirmDelete = true }) },
+        actions = {
+            AiAssistButton(
+                uses = listOf(AiUse.STEPS, AiUse.REWRITE),
+                text = { if (note.isBlank()) title else "$title\n$note" },
+                onApply = { use, result -> note = if (use == AiUse.STEPS) (note.trim() + "\n" + result).trim() else result },
+                applyLabel = { u -> if (u == AiUse.STEPS) "Add to details" else "Replace details" },
+            )
+            if (existing != null) IconAction(Icons.Filled.Delete, "Delete task", { confirmDelete = true })
+        },
         bottomBar = {
             ActionBar {
                 Message(error, MessageKind.ERROR)
@@ -298,7 +323,15 @@ internal fun AppreciationEditorScreen(
     AppScreen(
         if (existing == null) "New appreciation" else "Appreciation",
         onBack = onBack,
-        actions = { if (existing != null) IconAction(Icons.Filled.Delete, "Delete permanently", { confirmDelete = true }) },
+        actions = {
+            AiAssistButton(
+                uses = listOf(AiUse.POLISH, AiUse.FIX, AiUse.SUMMARIZE),
+                text = { if (text.isBlank()) title else "$title\n$text" },
+                onApply = { _, result -> text = result },
+                applyLabel = { "Use as what they said" },
+            )
+            if (existing != null) IconAction(Icons.Filled.Delete, "Delete permanently", { confirmDelete = true })
+        },
         bottomBar = {
             ActionBar {
                 Message(error, MessageKind.ERROR)

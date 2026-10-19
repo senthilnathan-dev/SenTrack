@@ -35,32 +35,44 @@ object AiProtocol {
         return "$instruction\n\n---\n$text"
     }
 
-    fun request(provider: AiProvider, model: String, key: String, prompt: String): HttpSpec = when (provider) {
+    fun request(
+        provider: AiProvider, model: String, key: String, prompt: String,
+        system: String = "", temperature: Double? = null, maxTokens: Int = 1500,
+    ): HttpSpec = when (provider) {
         AiProvider.GEMINI -> HttpSpec(
             url = "https://generativelanguage.googleapis.com/v1beta/models/${model.trim()}:generateContent",
             headers = mapOf("x-goog-api-key" to key, "Content-Type" to "application/json"),
-            body = JSONObject().put(
-                "contents",
-                JSONArray().put(JSONObject().put("parts", JSONArray().put(JSONObject().put("text", prompt)))),
-            ).toString(),
+            body = JSONObject().apply {
+                put("contents", JSONArray().put(JSONObject().put("parts", JSONArray().put(JSONObject().put("text", prompt)))))
+                if (system.isNotBlank()) put("systemInstruction", JSONObject().put("parts", JSONArray().put(JSONObject().put("text", system))))
+                put("generationConfig", JSONObject().put("maxOutputTokens", maxTokens).apply { temperature?.let { put("temperature", it) } })
+            }.toString(),
         )
         AiProvider.OPENAI -> HttpSpec(
             url = "https://api.openai.com/v1/chat/completions",
             headers = mapOf("Authorization" to "Bearer $key", "Content-Type" to "application/json"),
+            // Temperature is left at the service default here: some newer OpenAI models reject any other value.
             body = JSONObject().put("model", model.trim()).put(
                 "messages",
-                JSONArray().put(JSONObject().put("role", "user").put("content", prompt)),
+                JSONArray().apply {
+                    if (system.isNotBlank()) put(JSONObject().put("role", "system").put("content", system))
+                    put(JSONObject().put("role", "user").put("content", prompt))
+                },
             ).toString(),
         )
         AiProvider.CLAUDE -> HttpSpec(
             url = "https://api.anthropic.com/v1/messages",
             headers = mapOf("x-api-key" to key, "anthropic-version" to "2023-06-01", "Content-Type" to "application/json"),
-            body = JSONObject().put("model", model.trim()).put("max_tokens", 1500).put(
-                "messages",
-                JSONArray().put(JSONObject().put("role", "user").put("content", prompt)),
-            ).toString(),
+            body = JSONObject().apply {
+                put("model", model.trim())
+                put("max_tokens", maxTokens)
+                if (system.isNotBlank()) put("system", system)
+                temperature?.let { put("temperature", it) }
+                put("messages", JSONArray().put(JSONObject().put("role", "user").put("content", prompt)))
+            }.toString(),
         )
     }
+
 
     /** The reply text from a provider's JSON, or null when the shape is not what was expected. */
     fun parse(provider: AiProvider, json: String): String? = runCatching {

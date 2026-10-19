@@ -42,6 +42,8 @@ import `in`.senthilnathan_dev.sentrack.core.data.personal.PersonalAttachmentEnti
 import `in`.senthilnathan_dev.sentrack.core.data.personal.PlanItemEntity
 import `in`.senthilnathan_dev.sentrack.core.data.personal.PlanStepEntity
 import `in`.senthilnathan_dev.sentrack.core.ui.ActionBar
+import `in`.senthilnathan_dev.sentrack.core.ui.AiAssistButton
+import `in`.senthilnathan_dev.sentrack.core.ui.AiUse
 import `in`.senthilnathan_dev.sentrack.core.ui.AppScreen
 import `in`.senthilnathan_dev.sentrack.core.ui.DateField
 import `in`.senthilnathan_dev.sentrack.core.ui.IconAction
@@ -240,6 +242,18 @@ internal fun PlanEditorScreen(
         if (existing == null) "New plan" else "Edit plan",
         onBack = onBack,
         actions = {
+            AiAssistButton(
+                uses = listOf(AiUse.STEPS, AiUse.REWRITE),
+                text = { if (note.isBlank()) title else "$title\n$note" },
+                onApply = { use, result ->
+                    if (use == AiUse.STEPS) {
+                        result.lines().map { it.trim().removePrefix("-").removePrefix("*").trim() }.filter { it.isNotBlank() }.take(10).forEach { stepList.add(it to false) }
+                    } else {
+                        note = result
+                    }
+                },
+                applyLabel = { u -> if (u == AiUse.STEPS) "Add these steps" else "Replace notes" },
+            )
             if (existing != null) {
                 IconAction(if (existing.archived) Icons.Filled.Unarchive else Icons.Filled.Archive, if (existing.archived) "Restore" else "Archive", onToggleArchive)
                 IconAction(Icons.Filled.Delete, "Delete permanently", { confirmDelete = true })

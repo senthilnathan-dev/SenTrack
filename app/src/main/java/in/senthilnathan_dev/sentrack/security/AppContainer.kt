@@ -16,6 +16,7 @@ import `in`.senthilnathan_dev.sentrack.core.data.finance.FinanceRepository
 import `in`.senthilnathan_dev.sentrack.core.data.personal.HabitRepository
 import `in`.senthilnathan_dev.sentrack.core.data.personal.LifeRepository
 import `in`.senthilnathan_dev.sentrack.core.data.career.CareerRepository
+import `in`.senthilnathan_dev.sentrack.core.ai.local.LocalLlmHolder
 import `in`.senthilnathan_dev.sentrack.core.data.work.WorkRepository
 import `in`.senthilnathan_dev.sentrack.core.data.personal.NoteRepository
 import `in`.senthilnathan_dev.sentrack.core.security.biometric.BiometricUnlock
@@ -70,6 +71,13 @@ class AppContainer(app: Application) {
     val ai = AiSettingsStore(database)
     val localModels = LocalModelStore(app)
     val localSetup = LocalAiSetup(localModels, ai, appScope)
+    val localLlm = LocalLlmHolder(appScope, File(app.cacheDir, "llm").also { it.mkdirs() }.path)
+    val aiAssist = AiAssistImpl(ai, localModels, localLlm)
+
+    init {
+        // A loaded model holds hundreds of MB; free it whenever the app locks.
+        session.addListener { unlocked -> if (!unlocked) localLlm.release() }
+    }
 
     /** Encrypted attachment store. Lives in `noBackupFilesDir`, like the vault header. */
     val files = FileVault(File(app.noBackupFilesDir, "vault_files"), session)

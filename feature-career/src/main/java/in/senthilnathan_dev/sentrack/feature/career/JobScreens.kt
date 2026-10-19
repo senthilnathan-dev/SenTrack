@@ -38,6 +38,8 @@ import `in`.senthilnathan_dev.sentrack.core.data.career.InterviewEntity
 import `in`.senthilnathan_dev.sentrack.core.data.career.JobApplicationEntity
 import `in`.senthilnathan_dev.sentrack.core.data.career.ResumeEntity
 import `in`.senthilnathan_dev.sentrack.core.ui.ActionBar
+import `in`.senthilnathan_dev.sentrack.core.ui.AiAssistButton
+import `in`.senthilnathan_dev.sentrack.core.ui.AiUse
 import `in`.senthilnathan_dev.sentrack.core.ui.AppScreen
 import `in`.senthilnathan_dev.sentrack.core.ui.DateField
 import `in`.senthilnathan_dev.sentrack.core.ui.IconAction
@@ -141,7 +143,21 @@ internal fun JobEditorScreen(
     AppScreen(
         if (existing == null) "New application" else "Application",
         onBack = onBack,
-        actions = { ArchiveDeleteActions(existing?.archived, onToggleArchive) { confirmDelete = true } },
+        actions = {
+            AiAssistButton(
+                uses = listOf(AiUse.FOLLOW_UP, AiUse.INTERVIEW_PREP),
+                text = {
+                    buildString {
+                        append("Role: ${role.ifBlank { "(not set)" }}\nCompany: ${company.ifBlank { "(not set)" }}\nStatus: ${status.label}")
+                        if (hasApplied) append("\nApplied on: ${formatDate(applied)}")
+                        if (note.isNotBlank()) append("\nNotes: $note")
+                    }
+                },
+                onApply = { _, result -> note = (note.trim() + "\n\n" + result).trim() },
+                applyLabel = { "Add to notes" },
+            )
+            ArchiveDeleteActions(existing?.archived, onToggleArchive) { confirmDelete = true }
+        },
         bottomBar = {
             ActionBar {
                 Message(error, MessageKind.ERROR)

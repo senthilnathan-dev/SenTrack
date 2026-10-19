@@ -30,6 +30,8 @@ import androidx.compose.ui.unit.dp
 import `in`.senthilnathan_dev.sentrack.core.data.finance.BudgetEntity
 import `in`.senthilnathan_dev.sentrack.core.data.finance.CategoryEntity
 import `in`.senthilnathan_dev.sentrack.core.data.finance.TransactionEntity
+import `in`.senthilnathan_dev.sentrack.core.ui.AiAssistButton
+import `in`.senthilnathan_dev.sentrack.core.ui.AiUse
 import `in`.senthilnathan_dev.sentrack.core.ui.PrimaryButton
 import `in`.senthilnathan_dev.sentrack.core.ui.SecondaryButton
 import `in`.senthilnathan_dev.sentrack.core.ui.Section
@@ -37,6 +39,24 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
+
+/**
+ * The month's figures as plain lines of text, for the assistant to explain. Every number comes from SenTrack's own
+ * calculations; the model only puts them into words, and the answer is checked for numbers that were not given.
+ */
+private fun monthFacts(month: YearMonth, m: MonthSummary, last: MonthSummary, categories: Map<String, CategoryEntity>): String = buildString {
+    append("Month: ").append(month.longName()).append('\n')
+    append("Income: ").append(Money.format(m.incomePaise)).append('\n')
+    append("Spent: ").append(Money.format(m.expensePaise)).append(" (previous month ").append(Money.format(last.expensePaise)).append(")\n")
+    append("Invested: ").append(Money.format(m.investedPaise)).append('\n')
+    append("Left after spending: ").append(Money.format(m.incomePaise - m.expensePaise)).append('\n')
+    m.savingsRate?.let { append("Savings rate: ").append((it * 100).toInt()).append("%\n") }
+    val top = m.expenseByCategory.entries.sortedByDescending { it.value }.take(5)
+    if (top.isNotEmpty()) {
+        append("Top spending: ")
+        append(top.joinToString(", ") { (categories[it.key]?.name ?: "Uncategorised") + " " + Money.format(it.value) })
+    }
+}
 
 private fun YearMonth.longName() = month.getDisplayName(TextStyle.FULL, Locale.ENGLISH) + " " + year
 private fun YearMonth.shortName() = month.getDisplayName(TextStyle.SHORT, Locale.ENGLISH)
@@ -146,6 +166,12 @@ internal fun ColumnScope.DashboardContent(
     Section(month.longName()) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             TextButton(onClick = { monthOffset += 1 }) { Text("‹ Earlier") }
+            AiAssistButton(
+                uses = listOf(AiUse.EXPLAIN_MONTH),
+                text = { monthFacts(month, thisMonth, lastMonth, categories) },
+                onApply = { _, _ -> },
+                applyLabel = { "Got it" },
+            )
             TextButton(onClick = { monthOffset -= 1 }, enabled = monthOffset > 0) { Text("Later ›") }
         }
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {

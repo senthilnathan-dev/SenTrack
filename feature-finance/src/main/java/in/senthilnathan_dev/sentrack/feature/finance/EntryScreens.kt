@@ -32,6 +32,8 @@ import `in`.senthilnathan_dev.sentrack.core.data.finance.CategoryEntity
 import `in`.senthilnathan_dev.sentrack.core.data.finance.CategoryType
 import `in`.senthilnathan_dev.sentrack.core.data.finance.TransactionEntity
 import `in`.senthilnathan_dev.sentrack.core.data.finance.TxType
+import `in`.senthilnathan_dev.sentrack.core.ui.AiAssistButton
+import `in`.senthilnathan_dev.sentrack.core.ui.AiUse
 import `in`.senthilnathan_dev.sentrack.core.ui.ActionBar
 import `in`.senthilnathan_dev.sentrack.core.ui.PickerField
 import `in`.senthilnathan_dev.sentrack.core.ui.DateField
@@ -160,7 +162,22 @@ internal fun EntryScreen(
     AppScreen(
         if (existing == null) "Add entry" else "Edit entry",
         onBack = onBack,
-        actions = { if (onDelete != null) IconAction(Icons.Filled.Delete, "Delete this entry", { confirmDelete = true }) },
+        actions = {
+            if (type == TxType.EXPENSE || type == TxType.INCOME) {
+                val options = categories.filter { !it.archived && it.type == (if (type == TxType.EXPENSE) CategoryType.EXPENSE else CategoryType.INCOME) }
+                AiAssistButton(
+                    uses = listOf(AiUse.CATEGORY),
+                    text = { note },
+                    extra = { "Categories: " + options.joinToString(", ") { it.name } },
+                    onApply = { _, answer ->
+                        val wanted = answer.trim().trim('.', '"', '“', '”')
+                        options.firstOrNull { it.name.equals(wanted, ignoreCase = true) }?.let { categoryId = it.id }
+                    },
+                    applyLabel = { "Use this category" },
+                )
+            }
+            if (onDelete != null) IconAction(Icons.Filled.Delete, "Delete this entry", { confirmDelete = true })
+        },
         // Save stays pinned at the bottom, within thumb reach, with any error shown right above it.
         bottomBar = {
             ActionBar {

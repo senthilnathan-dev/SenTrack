@@ -57,6 +57,8 @@ import `in`.senthilnathan_dev.sentrack.core.data.personal.NoteAttachmentEntity
 import `in`.senthilnathan_dev.sentrack.core.data.personal.NoteEntity
 import `in`.senthilnathan_dev.sentrack.core.data.personal.NoteFolderEntity
 import `in`.senthilnathan_dev.sentrack.core.ui.AppScreen
+import `in`.senthilnathan_dev.sentrack.core.ui.AiAssistButton
+import `in`.senthilnathan_dev.sentrack.core.ui.AiUse
 import `in`.senthilnathan_dev.sentrack.core.ui.IconAction
 import `in`.senthilnathan_dev.sentrack.core.ui.Message
 import `in`.senthilnathan_dev.sentrack.core.ui.MessageKind
@@ -174,6 +176,38 @@ internal fun NoteEditorScreen(
         if (s != null) { body = TextFieldValue(s.text, TextRange(s.selStart, s.selEnd)); historyTick++ }
     }
 
+    // ---- AI assist: works on the selected text, or the whole note when nothing is selected.
+    var aiStart by remember { mutableStateOf(0) }
+    var aiEnd by remember { mutableStateOf(0) }
+    fun aiSource(): String {
+        val sel = body.selection
+        return if (!sel.collapsed) {
+            aiStart = sel.min; aiEnd = sel.max
+            body.text.substring(sel.min, sel.max)
+        } else {
+            aiStart = 0; aiEnd = body.text.length
+            body.text
+        }
+    }
+    fun applyAi(use: AiUse, result: String) {
+        if (use == AiUse.TITLE) {
+            title = result.lineSequence().firstOrNull().orEmpty().trim().trim('"', '“', '”')
+            return
+        }
+        val t = body.text
+        val start = aiStart.coerceIn(0, t.length)
+        val end = aiEnd.coerceIn(start, t.length)
+        val updated = when (use) {
+            AiUse.FIX, AiUse.REWRITE, AiUse.SHORTEN -> t.substring(0, start) + result + t.substring(end)
+            AiUse.SUMMARIZE -> t.trimEnd() + "\n\n**Summary**\n" + result
+            AiUse.ACTION_ITEMS -> t.trimEnd() + "\n\n**Action items**\n" + result
+            else -> t
+        }
+        history.record(EditHistory.Snapshot(updated, updated.length, updated.length), System.currentTimeMillis(), forceNewStep = true)
+        body = TextFieldValue(updated, TextRange(updated.length))
+        historyTick++
+    }
+
     val prefix = if (!reading && body.selection.collapsed) EditAssist.prefixAt(body.text, body.selection.end) else ""
     val suggestions = remember(vocabulary, prefix) { EditAssist.suggest(vocabulary, prefix) }
 
@@ -182,6 +216,12 @@ internal fun NoteEditorScreen(
         largeHeader = false,
         onBack = ::leave,
         actions = {
+            AiAssistButton(
+                uses = listOf(AiUse.FIX, AiUse.REWRITE, AiUse.SHORTEN, AiUse.SUMMARIZE, AiUse.ACTION_ITEMS, AiUse.TITLE),
+                text = { if (title.isNotBlank() && body.text.isBlank()) title else aiSource() },
+                onApply = ::applyAi,
+                applyLabel = { u -> when (u) { AiUse.TITLE -> "Use as title"; AiUse.SUMMARIZE, AiUse.ACTION_ITEMS -> "Add to note"; else -> "Replace text" } },
+            )
             IconAction(if (reading) Icons.Filled.Edit else Icons.Filled.Visibility, if (reading) "Edit the text" else "Read the note", { reading = !reading })
             IconAction(
                 Icons.Filled.PushPin, if (pinned) "Unpin" else "Pin to the top", { pinned = !pinned },

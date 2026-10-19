@@ -34,6 +34,8 @@ import `in`.senthilnathan_dev.sentrack.core.data.personal.AchievementEntity
 import `in`.senthilnathan_dev.sentrack.core.data.personal.ImportantDateEntity
 import `in`.senthilnathan_dev.sentrack.core.data.personal.PersonalAttachmentEntity
 import `in`.senthilnathan_dev.sentrack.core.ui.ActionBar
+import `in`.senthilnathan_dev.sentrack.core.ui.AiAssistButton
+import `in`.senthilnathan_dev.sentrack.core.ui.AiUse
 import `in`.senthilnathan_dev.sentrack.core.ui.AppScreen
 import `in`.senthilnathan_dev.sentrack.core.ui.DateField
 import `in`.senthilnathan_dev.sentrack.core.ui.IconAction
@@ -212,6 +214,12 @@ internal fun AchievementEditorScreen(
         if (existing == null) "New achievement" else "Achievement",
         onBack = onBack,
         actions = {
+            AiAssistButton(
+                uses = listOf(AiUse.POLISH, AiUse.FIX, AiUse.REWRITE),
+                text = { if (description.isBlank()) title else "$title\n$description" },
+                onApply = { _, result -> description = result },
+                applyLabel = { "Use as the details" },
+            )
             if (existing != null) {
                 IconAction(if (existing.archived) Icons.Filled.Unarchive else Icons.Filled.Archive, if (existing.archived) "Restore" else "Archive", onToggleArchive)
                 IconAction(Icons.Filled.Delete, "Delete permanently", { confirmDelete = true })

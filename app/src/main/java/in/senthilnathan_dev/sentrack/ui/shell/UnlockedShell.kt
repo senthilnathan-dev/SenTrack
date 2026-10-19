@@ -42,6 +42,7 @@ import `in`.senthilnathan_dev.sentrack.core.ui.AppScreen
 import `in`.senthilnathan_dev.sentrack.core.ui.IconAction
 import `in`.senthilnathan_dev.sentrack.core.ui.LocalBottomInsetHandled
 import `in`.senthilnathan_dev.sentrack.core.ui.LocalExternalFlowStarter
+import `in`.senthilnathan_dev.sentrack.core.ui.LocalAiAssist
 import `in`.senthilnathan_dev.sentrack.core.ui.Section
 import `in`.senthilnathan_dev.sentrack.feature.finance.FinanceTab
 import `in`.senthilnathan_dev.sentrack.feature.personal.PersonalTab
@@ -74,6 +75,7 @@ fun UnlockedShell(
     onOpenSettings: () -> Unit,
     onExternalFlow: () -> Unit,
 ) {
+    val aiAssist = (androidx.compose.ui.platform.LocalContext.current.applicationContext as `in`.senthilnathan_dev.sentrack.SenTrackApp).container.aiAssist
     var selected by rememberSaveable { mutableStateOf(Tab.FINANCE) }
     var showReminders by rememberSaveable { mutableStateOf(false) }
     val topActions: @Composable RowScope.() -> Unit = {
@@ -102,7 +104,7 @@ fun UnlockedShell(
         },
     ) { padding ->
         // The bottom bar above already pads for the system navigation bar, so screens inside must not pad again.
-        CompositionLocalProvider(LocalBottomInsetHandled provides true, LocalExternalFlowStarter provides onExternalFlow) {
+        CompositionLocalProvider(LocalBottomInsetHandled provides true, LocalExternalFlowStarter provides onExternalFlow, LocalAiAssist provides aiAssist) {
             Box(modifier = Modifier.padding(padding)) {
                 if (showReminders) {
                     RemindersScreen(reminders, reminderCenter, onBack = { showReminders = false })
