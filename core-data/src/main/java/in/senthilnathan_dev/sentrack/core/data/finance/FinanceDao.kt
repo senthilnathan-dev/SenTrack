@@ -93,4 +93,14 @@ interface FinanceDao {
 
     @Query("DELETE FROM fin_tax_document WHERE id = :id")
     suspend fun deleteTaxDocument(id: String)
+
+    // ---- Recurring entries
+    @Query("SELECT * FROM fin_recurring ORDER BY paused, dayOfMonth, name COLLATE NOCASE")
+    fun observeRecurring(): Flow<List<RecurringEntity>>
+
+    @Upsert
+    suspend fun upsertRecurring(recurring: RecurringEntity)
+
+    @Query("DELETE FROM fin_recurring WHERE id = :id")
+    suspend fun deleteRecurring(id: String)
 }

@@ -23,6 +23,7 @@ import `in`.senthilnathan_dev.sentrack.core.data.finance.CategoryEntity
 import `in`.senthilnathan_dev.sentrack.core.data.finance.FinanceDao
 import `in`.senthilnathan_dev.sentrack.core.data.finance.GoalAccountEntity
 import `in`.senthilnathan_dev.sentrack.core.data.finance.GoalEntity
+import `in`.senthilnathan_dev.sentrack.core.data.finance.RecurringEntity
 import `in`.senthilnathan_dev.sentrack.core.data.finance.TaxDocumentEntity
 import `in`.senthilnathan_dev.sentrack.core.data.finance.TaxFilingEntity
 import `in`.senthilnathan_dev.sentrack.core.data.finance.TransactionEntity
@@ -116,10 +117,11 @@ interface MetaDao {
         CareerAttachmentEntity::class,
         WorkspaceItemEntity::class,
         ChecklistItemEntity::class,
+        RecurringEntity::class,
     ],
-    version = 12,
+    version = 13,
     exportSchema = true,
-    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3), AutoMigration(from = 3, to = 5), AutoMigration(from = 5, to = 6), AutoMigration(from = 6, to = 8), AutoMigration(from = 8, to = 12)],
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3), AutoMigration(from = 3, to = 5), AutoMigration(from = 5, to = 6), AutoMigration(from = 6, to = 8), AutoMigration(from = 8, to = 12), AutoMigration(from = 12, to = 13)],
 )
 abstract class SenTrackDatabase : RoomDatabase() {
     abstract fun metaDao(): MetaDao

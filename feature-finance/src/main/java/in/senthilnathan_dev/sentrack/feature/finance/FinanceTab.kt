@@ -41,6 +41,11 @@ import `in`.senthilnathan_dev.sentrack.core.attachments.AttachmentService
 import `in`.senthilnathan_dev.sentrack.core.attachments.AttachmentViewerScreen
 import `in`.senthilnathan_dev.sentrack.core.data.finance.FinanceRepository
 import `in`.senthilnathan_dev.sentrack.core.data.finance.TaxDocCategory
+import `in`.senthilnathan_dev.sentrack.core.alerts.ReminderRepository
+import `in`.senthilnathan_dev.sentrack.core.data.finance.RecurringEntity
+import `in`.senthilnathan_dev.sentrack.core.data.finance.TransactionEntity
+import `in`.senthilnathan_dev.sentrack.core.data.reminders.ReminderEntity
+import `in`.senthilnathan_dev.sentrack.core.sync.ScheduleSpec
 import `in`.senthilnathan_dev.sentrack.core.data.finance.TaxDocumentEntity
 import `in`.senthilnathan_dev.sentrack.core.security.vault.FileVault
 import `in`.senthilnathan_dev.sentrack.core.data.finance.TxType
@@ -66,6 +71,7 @@ internal sealed interface FinanceRoute {
     data object ArchivedTaxYears : FinanceRoute
     data class Filing(val id: String) : FinanceRoute
     data class Viewer(val docId: String) : FinanceRoute
+    data class RecurringEditor(val id: String?) : FinanceRoute
 }
 
 private enum class FinanceSection(val label: String, val icon: ImageVector) {
@@ -84,7 +90,7 @@ private enum class FinanceSection(val label: String, val icon: ImageVector) {
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FinanceTab(repo: FinanceRepository, files: FileVault, topActions: @Composable RowScope.() -> Unit) {
+fun FinanceTab(repo: FinanceRepository, reminderRepo: ReminderRepository, files: FileVault, topActions: @Composable RowScope.() -> Unit) {
     val scope = rememberCoroutineScope()
     LaunchedEffect(repo) { repo.ensureDefaults() }
 
@@ -97,6 +103,7 @@ fun FinanceTab(repo: FinanceRepository, files: FileVault, topActions: @Composabl
     val goalLinks by remember(repo) { repo.goalAccounts() }.collectAsState(initial = emptyList())
     val taxFilings by remember(repo) { repo.taxFilings() }.collectAsState(initial = emptyList())
     val taxDocuments by remember(repo) { repo.taxDocuments() }.collectAsState(initial = emptyList())
+    val recurring by remember(repo) { repo.recurring() }.collectAsState(initial = emptyList())
     val summaries = remember(accounts, transactions) { FinanceCalculator.summarize(accounts, transactions) }
     val accountMap = remember(accounts) { accounts.associateBy { it.id } }
     val categoryMap = remember(categories) { categories.associateBy { it.id } }
@@ -105,6 +112,45 @@ fun FinanceTab(repo: FinanceRepository, files: FileVault, topActions: @Composabl
         goals.map { FinanceCalculator.goalProgress(it, linkedByGoal[it.id] ?: emptySet(), summaries, LocalDate.now()) }
     }
     val thisMonth = remember(transactions) { YearMonth.now().let { FinanceCalculator.monthSummary(transactions, it.year, it.monthValue) } }
+
+    // ---- Repeating entries: what is due, and how to answer it. Nothing changes your balances until you say so.
+    val today = LocalDate.now()
+    val due = remember(recurring) {
+        recurring.mapNotNull { r -> RecurringMath.pendingDates(r, today).firstOrNull()?.let { DueItem(r, it) } }.sortedBy { it.date }
+    }
+    fun answerDue(item: DueItem, add: Boolean) {
+        scope.launch {
+            if (add) {
+                val r = item.rule
+                repo.saveTransaction(
+                    TransactionEntity(
+                        id = java.util.UUID.randomUUID().toString(), dateEpochDay = item.date.toEpochDay(), type = r.type,
+                        amountPaise = r.amountPaise, accountId = r.accountId, toAccountId = r.toAccountId, categoryId = r.categoryId,
+                        principalReturnedPaise = null, note = r.note ?: r.name, createdAtMillis = System.currentTimeMillis(),
+                    ),
+                )
+            }
+            repo.saveRecurring(item.rule.copy(lastDoneEpochDay = item.date.toEpochDay()))
+        }
+    }
+    /** Saves a repeating entry and keeps its monthly reminder (id recurring-<id>) in step. */
+    fun saveRecurring(r: RecurringEntity) {
+        scope.launch {
+            repo.saveRecurring(r)
+            val id = "recurring-${r.id}"
+            if (r.remind && !r.paused) {
+                reminderRepo.save(
+                    ReminderEntity(
+                        id = id, title = r.name, note = null, ownerKind = "finance:recurring", ownerId = r.id, style = "NOTIFICATION",
+                        oneOffAtMillis = null, repeatEncoded = ScheduleSpec.Monthly(r.dayOfMonth, java.time.LocalTime.of(9, 0)).encode(),
+                        enabled = true, completed = false, createdAtMillis = System.currentTimeMillis(),
+                    ),
+                )
+            } else {
+                reminderRepo.delete(id)
+            }
+        }
+    }
 
     // ---- Tax documents: import from the phone, save a readable copy, with progress and result messages.
     val context = LocalContext.current.applicationContext
@@ -171,6 +217,7 @@ fun FinanceTab(repo: FinanceRepository, files: FileVault, topActions: @Composabl
                 )
             },
         ) {
+            if (section == FinanceSection.DASHBOARD) DueNowCard(due, onAdd = { answerDue(it, true) }, onSkip = { answerDue(it, false) })
             when (section) {
                 FinanceSection.DASHBOARD -> DashboardContent(
                     summaries = summaries,
@@ -207,6 +254,11 @@ fun FinanceTab(repo: FinanceRepository, files: FileVault, topActions: @Composabl
                     onSetBudget = { id, limit -> scope.launch { repo.setBudget(id, limit) } },
                     onOpenGoal = { open(FinanceRoute.GoalEditor(it)) },
                     onOpenArchivedGoals = { open(FinanceRoute.ArchivedGoals) },
+                )
+                RecurringSection(
+                    rules = recurring,
+                    onOpen = { open(FinanceRoute.RecurringEditor(it)) },
+                    onAdd = { open(FinanceRoute.RecurringEditor(null)) },
                 )
                 TaxFilingsSection(
                     filings = taxFilings,
@@ -351,6 +403,24 @@ fun FinanceTab(repo: FinanceRepository, files: FileVault, topActions: @Composabl
                     }
                 },
                 onToggleArchive = { updated -> scope.launch { repo.saveTaxFiling(updated); back() } },
+                onBack = ::back,
+            )
+        }
+
+        is FinanceRoute.RecurringEditor -> {
+            val existing = recurring.firstOrNull { it.id == route.id }
+            RecurringEditorScreen(
+                existing = existing,
+                accounts = accounts,
+                categories = categories,
+                onSave = { r -> saveRecurring(r); back() },
+                onDelete = {
+                    scope.launch {
+                        existing?.let { repo.deleteRecurring(it.id) }
+                        existing?.let { reminderRepo.delete("recurring-${it.id}") }
+                    }
+                    back()
+                },
                 onBack = ::back,
             )
         }

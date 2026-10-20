@@ -111,7 +111,7 @@ fun UnlockedShell(
                     return@Box
                 }
                 when (selected) {
-                    Tab.FINANCE -> FinanceTab(finance, files, topActions)
+                    Tab.FINANCE -> FinanceTab(finance, reminders, files, topActions)
                     Tab.PERSONAL -> PersonalTab(notes, habits, life, reminders, files, topActions)
                     Tab.WORK -> WorkTab(work, files, topActions)
                     Tab.CAREER -> CareerTab(career, work, reminders, files, topActions)

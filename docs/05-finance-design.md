@@ -29,3 +29,17 @@ Plan tab -> Tax filings (archive a year to hide it; archived years live behind a
 
 ## Still to build
 Recurring entries (monthly PF/SIP) and reminders (Phase 7), optional current value per investment, overspending alerts (Phase 7).
+
+## Repeating entries (schema v13)
+
+`fin_recurring` holds rules for things that repeat monthly: salary, rent, a SIP, an EMI (types Income, Expense, Invest,
+Transfer, with the same account rules as an ordinary entry). Day of month is 1 to 28 so every month has it.
+
+**Nothing changes a balance by itself.** When a due date arrives (`RecurringMath.pendingDates`) the rule appears in a
+**Due now** card on the Dashboard with *Add entry* and *Skip*. Adding creates an ordinary transaction dated on the due
+day; both choices move the rule's `lastDoneEpochDay` forward. Only the oldest unanswered date per rule is shown, so a
+missed month is never answered out of order, and at most the latest twelve are tracked.
+
+Each rule can have a monthly 9 am reminder (reminder id `recurring-<id>`, a `ScheduleSpec.Monthly`), which works while the
+app is locked. Rules can be paused or given an end date. Manage them in Finance -> Plan -> Repeating entries.
+Unit-tested in `RecurringMathTest`.

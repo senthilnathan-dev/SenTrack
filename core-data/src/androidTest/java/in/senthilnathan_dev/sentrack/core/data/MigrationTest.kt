@@ -23,7 +23,7 @@ class MigrationTest {
     @get:Rule
     val helper = MigrationTestHelper(InstrumentationRegistry.getInstrumentation(), SenTrackDatabase::class.java)
 
-    private fun latestVersion() = 12
+    private fun latestVersion() = 13
 
     @Test
     fun migrate_fromFirstVersion_throughEveryStep() {
@@ -75,7 +75,7 @@ class MigrationTest {
     private fun assertAllCurrentTablesExist(db: androidx.sqlite.db.SupportSQLiteDatabase) {
         val expected = listOf(
             "company", "leave_type", "leave_entry", "attendance", "work_task", "appreciation", "work_permission", "work_attachment",
-            "learning_item", "certification", "job_application", "interview", "resume", "career_attachment", "workspace_item", "checklist_item",
+            "fin_recurring", "learning_item", "certification", "job_application", "interview", "resume", "career_attachment", "workspace_item", "checklist_item",
             "plan_item", "plan_step", "achievement", "important_date", "personal_attachment", "habit", "habit_log", "reminder",
         )
         db.query("SELECT name FROM sqlite_master WHERE type = 'table'").use { c ->

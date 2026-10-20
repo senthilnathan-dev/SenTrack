@@ -91,6 +91,10 @@ class FinanceRepository(private val holder: DatabaseHolder) {
     /** Removes the document's record. The caller deletes the encrypted file from the vault afterwards. */
     suspend fun deleteTaxDocument(id: String) = dao().deleteTaxDocument(id)
 
+    fun recurring(): Flow<List<RecurringEntity>> = dao().observeRecurring()
+    suspend fun saveRecurring(r: RecurringEntity) = dao().upsertRecurring(r)
+    suspend fun deleteRecurring(id: String) = dao().deleteRecurring(id)
+
     suspend fun saveGoal(goal: GoalEntity, accountIds: Set<String>) {
         val dao = dao()
         dao.upsertGoal(goal)

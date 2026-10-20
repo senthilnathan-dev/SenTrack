@@ -163,3 +163,30 @@ data class TaxDocumentEntity(
     val vaultFileId: String,
     val addedAtMillis: Long,
 )
+
+/**
+ * Something that repeats every month: salary, rent, a SIP, an EMI. It never changes your balances by itself. When a due
+ * day arrives it shows up as "Due now" and you add it or skip it.
+ *
+ * @param type INCOME, EXPENSE, INVEST or TRANSFER (the same meaning as for a [TransactionEntity]).
+ * @param dayOfMonth 1 to 28, so every month has it.
+ * @param lastDoneEpochDay the latest due date already added or skipped; later ones are still pending.
+ */
+@Entity(tableName = "fin_recurring")
+data class RecurringEntity(
+    @PrimaryKey val id: String,
+    val name: String,
+    val type: TxType,
+    val amountPaise: Long,
+    val accountId: String?,
+    val toAccountId: String?,
+    val categoryId: String?,
+    val dayOfMonth: Int,
+    val startEpochDay: Long,
+    val endEpochDay: Long?,
+    val lastDoneEpochDay: Long?,
+    val paused: Boolean,
+    val remind: Boolean,
+    val note: String?,
+    val createdAtMillis: Long,
+)
