@@ -1,0 +1,87 @@
+name: Release
+
+# Runs when a version tag such as v0.5.0 is pushed. Builds the signed Play bundle and APK, then drafts a GitHub release with
+# the notes from CHANGELOG.md. It never uploads to Google Play by itself: you upload the bundle in Play Console.
+#
+# Needs these repository secrets (see tools/create-upload-key.sh):
+#   KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: The tag must match the app version
+        id: version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          name=$(sed -n 's/.*versionName = "\(.*\)".*/\1/p' app/build.gradle.kts)
+          if [ "$tag" != "$name" ]; then echo "::error::Tag v$tag does not match versionName $name in app/build.gradle.kts"; exit 1; fi
+          echo "version=$name" >> "$GITHUB_OUTPUT"
+
+      - name: Legal pages and changelog are up to date
+        run: |
+          bash tools/make-legal-pages.sh
+          git diff --exit-code -- docs/site CHANGELOG.md
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 25
+      - uses: android-actions/setup-android@v3
+      - name: Install the Android platform the build targets
+        run: |
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager "platforms;android-37"
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Unit tests
+        run: ./gradlew test --console=plain
+
+      - name: Restore the signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then echo "::error::Signing secrets are not set. See tools/create-upload-key.sh"; exit 1; fi
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+          {
+            echo "storeFile=$RUNNER_TEMP/upload.jks"
+            echo "storePassword=$KEYSTORE_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "keyPassword=$KEY_PASSWORD"
+          } > keystore.properties
+
+      - name: Build the signed bundle and APK
+        run: ./gradlew :app:bundleRelease :app:assembleRelease --console=plain
+
+      - name: Release notes from the changelog
+        run: |
+          v="${{ steps.version.outputs.version }}"
+          awk -v v="$v" '$0 ~ "^## \\[" v "\\]" {on=1; next} /^## \[/ {on=0} on' CHANGELOG.md > release-notes.md
+          [ -s release-notes.md ] || echo "See CHANGELOG.md" > release-notes.md
+
+      - name: Draft the GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          prerelease: ${{ startsWith(steps.version.outputs.version, '0.') }}
+          name: SenTrack ${{ steps.version.outputs.version }}
+          body_path: release-notes.md
+          files: |
+            app/build/outputs/bundle/release/app-release.aab
+            app/build/outputs/apk/release/*.apk
+
+      - name: Remove the key from the runner
+        if: always()
+        run: rm -f "$RUNNER_TEMP/upload.jks" keystore.properties

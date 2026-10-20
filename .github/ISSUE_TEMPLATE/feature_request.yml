@@ -1,0 +1,56 @@
+name: Feature request
+description: Suggest an improvement or a new capability
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        SenTrack is private and offline-first. Ideas that need an account, a server, analytics or reading other apps' data are
+        unlikely to fit. Ideas that make everyday tracking simpler, safer or clearer are very welcome.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Finance
+        - Personal
+        - Work
+        - Career
+        - Reminders
+        - Backup and restore
+        - Security and privacy
+        - AI assistant
+        - User interface
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      description: Describe the situation, not the solution. Who needs this and when?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives or workarounds you tried
+  - type: textarea
+    id: privacy
+    attributes:
+      label: Privacy or data impact
+      description: Would this store new kinds of data, need a new permission, or send anything off the phone? If unsure, say so.
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Contribution
+      options:
+        - label: I would like to work on this myself (see CONTRIBUTING.md)
+          required: false

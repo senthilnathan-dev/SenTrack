@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability (private)
+    url: https://github.com/senthilnathan-dev/SenTrack/security/advisories/new
+    about: Please do not file security problems as public issues. Use a private advisory, or email libertariansenthil@gmail.com.
+  - name: User guide and project documentation
+    url: https://github.com/senthilnathan-dev/SenTrack/blob/main/docs/README.md
+    about: How the app and the code are organised.

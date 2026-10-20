@@ -32,6 +32,8 @@ by the app and the published web pages.
 | Doc | What it covers |
 |---|---|
 | [12-security-review](12-security-review.md) | Findings and open items from the hardening pass |
+| [16-development-setup](16-development-setup.md) | Set up any machine: tools, clone, run on a phone, troubleshooting |
+| [17-git-workflow](17-git-workflow.md) | Branches, commits, pull requests, tags, releases, recommended GitHub settings |
 | [13-release-checklist](13-release-checklist.md) | Versioning, signing, release steps, Play Console setup |
 | [14-store-listing](14-store-listing.md) | Store text, content and Data safety answers, graphics |
 | [10-legal-about](10-legal-about.md) | How privacy policy, terms, user guide and changelog are produced and tested |

@@ -31,6 +31,9 @@ class LegalTextTest {
     fun changelog_newestReleaseIsTheAppVersion() {
         val gradle = read("app/build.gradle.kts")
         val versionName = Regex("""versionName\s*=\s*"([^"]+)"""").find(gradle)!!.groupValues[1]
+        val versionCode = Regex("""versionCode\s*=\s*(\d+)""").find(gradle)!!.groupValues[1].toInt()
+        val (major, minor, patch) = versionName.split(".").map { it.toInt() }
+        assertEquals("versionCode must be major*10000 + minor*100 + patch (tools/bump-version.sh)", major * 10000 + minor * 100 + patch, versionCode)
         val releases = LegalText.parse(read("docs/legal/changelog.txt")).map { Release.from(it) }
         assertEquals("The first changelog entry must be the current app version", versionName, releases.first().version)
         assertTrue("CHANGELOG.md is out of date: run tools/make-legal-pages.sh", read("CHANGELOG.md").contains("## [$versionName]"))

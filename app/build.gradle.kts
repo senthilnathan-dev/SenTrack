@@ -15,7 +15,7 @@ android {
         applicationId = "in.senthilnathan_dev.sentrack"
         minSdk = 36
         targetSdk = 36
-        versionCode = 5
+        versionCode = 500   // major * 10000 + minor * 100 + patch (tools/bump-version.sh keeps this rule)
         versionName = "0.5.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

@@ -1,0 +1,83 @@
+name: Bug report
+description: Something in SenTrack does not work as it should
+labels: ["bug", "needs-info"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting. **Do not include real personal or financial data** (use made-up examples and blur screenshots).
+        Security problems: please do not file them here. See SECURITY.md.
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      description: Settings, About SenTrack (for example 0.5.0 build 500)
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Phone and Android version
+      description: For example Samsung A34 5G, Android 16
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where did it happen?
+      options:
+        - Finance
+        - Personal (notes, habits, plans, moments)
+        - Work
+        - Career
+        - Reminders
+        - Backup and restore
+        - Lock, passphrase, biometrics
+        - AI assistant or on-device model
+        - Settings, About, user guide
+        - Build or development setup
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open ...
+        2. Tap ...
+        3. See ...
+    validations:
+      required: true
+  - type: dropdown
+    id: build
+    attributes:
+      label: Which build?
+      options:
+        - Play Store or internal testing
+        - Release APK
+        - Debug build (from source)
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error text or crash log (optional)
+      description: Paste the build error or the crash stack trace. Remove anything personal.
+      render: text
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before sending
+      options:
+        - label: I removed personal and financial information from this report
+          required: true
+        - label: I checked the user guide (Settings, User guide) and the known gaps in docs/00-project-decisions.md
+          required: false

@@ -20,7 +20,7 @@ Start with the [documentation index](docs/README.md). The short list:
 | [10-legal-about](docs/10-legal-about.md) | How the privacy policy, terms, user guide and changelog are kept in step |
 
 ## Build and run
-Prerequisites: Android Studio (stable), Android SDK 36, JDK 21 (the one bundled with Android Studio is fine).
+Prerequisites: Git, Android Studio (stable) with Android SDK Platforms 36 and 37, and internet on the first sync (Gradle downloads its own JDK 25; nothing to install by hand). Full guide: [docs/16-development-setup.md](docs/16-development-setup.md).
 
 1. Open the project folder in Android Studio and let Gradle sync.
 2. Select a device (a physical phone with Wireless debugging works well) and press Run.
@@ -43,3 +43,13 @@ The privacy policy, terms, user guide and release notes live in `docs/legal/*.tx
 - Database changes bump the schema version, keep the exported schema file in `core-data/schemas` and get a migration test.
 - Secrets, keystores and signing files are never committed (see `.gitignore`).
 - Every change that alters what data is stored, collected or sent also updates `docs/legal/privacy.txt`.
+
+## Contributing
+Humans and AI agents are both welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md) (branches, commits, pull requests, rules),
+[AGENTS.md](AGENTS.md) (instructions for AI agents), [docs/16-development-setup.md](docs/16-development-setup.md) (set up any
+machine) and [docs/17-git-workflow.md](docs/17-git-workflow.md). Security issues: [SECURITY.md](SECURITY.md). Conduct:
+[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md). Licence: [LICENSE](LICENSE) (all rights reserved for now).
+
+## Releasing
+`bash tools/bump-version.sh X.Y.Z`, then `bash tools/build-release.sh` for the signed bundle and APK. Pushing a `vX.Y.Z` tag runs the
+Release workflow on GitHub. Full runbook: [docs/13-release-checklist.md](docs/13-release-checklist.md).

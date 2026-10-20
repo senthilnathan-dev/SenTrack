@@ -1,0 +1,6 @@
+# Code owners are asked to review every pull request that touches these paths.
+*                       @senthilnathan-dev
+/core-security/         @senthilnathan-dev
+/core-data/schemas/     @senthilnathan-dev
+/docs/legal/            @senthilnathan-dev
+/.github/               @senthilnathan-dev
