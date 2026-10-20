@@ -1,4 +1,4 @@
-# Personal: Notes (Phase 4, step 1)
+# Personal: notes, habits, plans, moments and timeline (Phase 4)
 
 ## What it does
 - Formatted notes: headings, bold, italic, strikethrough, code, bullet / numbered / check lists, quotes. Written with a toolbar over plain text; the reading view renders it and check boxes can be ticked there
@@ -14,8 +14,6 @@ Schema v6: `note`, `note_folder`, `note_tag`, `note_tag_link`, `note_attachment`
 - `core-attachments`: `AttachmentService` (import, export, delete, temporary decrypted copies) and `AttachmentViewerScreen` (PDF, image, video). Finance tax documents now use the same module
 - `core-ui` pickers (`PickerField`, `DateField`, `TimeField`)
 
-## Coming next in Personal
-Habits, plans / goals / wishlist / bucket list, achievements, important dates (using the reminders engine), and the unified timeline.
 
 ## Editor (second iteration)
 - Borderless page with a compact header; large title; folder and tag chips under it
@@ -24,7 +22,7 @@ Habits, plans / goals / wishlist / bucket list, achievements, important dates (u
 - Undo/redo: typing in quick succession is one step; toolbar actions are their own steps (`EditHistory`, tested)
 - Lists continue on Enter and end on an empty item (`EditAssist.continueList`, tested)
 - Word suggestions from the user's own notes, shown above the toolbar; computed on the phone only (`EditAssist`, tested)
-- Standard keyboard options (sentence capitals, autocorrect). Note: some keyboards suppress their own suggestions in windows that block screenshots (`FLAG_SECURE`, which SenTrack sets everywhere); the in-app suggestions cover that
+- Standard keyboard options (sentence capitals, autocorrect). Note: some keyboards suppress their own suggestions in windows that block screenshots (`FLAG_SECURE`, which release builds set everywhere); the in-app suggestions cover that
 
 ## Habits (step 2)
 - Periods: daily (optionally only chosen weekdays), weekly, monthly, quarterly, yearly. Goal: done / not done N times per period, or a number (glasses, pages, km) per period
@@ -59,6 +57,9 @@ done items feed the timeline.
   notes. They can be added once the item has been saved.
 * **Timeline** merges notes, achievements, important dates that have arrived and finished plan items, newest first, with
   search over titles. Habit milestones are not on it yet.
+
+### AI in Personal
+The sparkle in the note editor offers fix spelling and grammar, make clearer, make shorter, summarize, list action items and suggest a title; it works on the selected text, or the whole note when nothing is selected, and the answer is applied only when the user accepts it (replace the text, or add to the end of the note). Plans offer "Break into steps" (the steps are added to the checklist) and clearer notes; achievements offer "Write it up well", fix and clearer. See [11-ai](11-ai.md).
 
 ### Migration note
 Database version 7 (habits) was never built on its own, so there is no `7.json`; the chain jumps `6 -> 8`.

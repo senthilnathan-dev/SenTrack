@@ -1,21 +1,26 @@
 # SenTrack
 
-A private, offline-first Android app for tracking **finance**, **personal life** and **work/career** in one place, with encrypted storage and an encrypted Google Drive backup.
+A private, offline-first Android app for tracking **finance**, **personal life**, **work** and **career** in one place. Everything is stored encrypted on the phone. An encrypted Google Drive backup and an optional AI assistant (on-device or with your own key) are the only things that can reach the network, and both are opt-in.
 
 - Package: `in.senthilnathan_dev.sentrack`
-- Platform: Android 16+ (minSdk/targetSdk 36), Kotlin + Jetpack Compose
-- Status: Phase 0 (foundation). See [docs/00-project-decisions.md](docs/00-project-decisions.md)
+- Platform: Android 16+ (minSdk and targetSdk 36), Kotlin + Jetpack Compose (Material 3)
+- Version: **0.5.0** (first internal-testing build). Releases are tagged `vX.Y.Z`; see [CHANGELOG.md](CHANGELOG.md)
+- Status: all planned feature phases are built. Current work is hardening and release preparation: [docs/13-release-checklist.md](docs/13-release-checklist.md)
 
 ## Documentation
+Start with the [documentation index](docs/README.md). The short list:
+
 | Doc | Purpose |
 |---|---|
-| [00-project-decisions](docs/00-project-decisions.md) | Scope, fixed decisions, phases |
-| [01-architecture](docs/01-architecture.md) | Layers, modules, data flow |
-| [02-security-model](docs/02-security-model.md) | Threat model, key management, encryption |
-| [adr/](docs/adr) | Architecture decision records (why we chose what we chose) |
+| [00-project-decisions](docs/00-project-decisions.md) | Scope, decisions as built, phase status |
+| [01-architecture](docs/01-architecture.md) | Modules, layers, data flow, dependency rules |
+| [02-security-model](docs/02-security-model.md) | Threats, keys, encryption, what is and is not protected |
+| [15-data-model](docs/15-data-model.md) | Database schema versions, tables, migrations |
+| [13-release-checklist](docs/13-release-checklist.md) | How to version, test, sign and publish a release |
+| [10-legal-about](docs/10-legal-about.md) | How the privacy policy, terms, user guide and changelog are kept in step |
 
 ## Build and run
-Prerequisites: Android Studio (stable), Android SDK 36, JDK 21.
+Prerequisites: Android Studio (stable), Android SDK 36, JDK 21 (the one bundled with Android Studio is fine).
 
 1. Open the project folder in Android Studio and let Gradle sync.
 2. Select a device (a physical phone with Wireless debugging works well) and press Run.
@@ -23,8 +28,18 @@ Prerequisites: Android Studio (stable), Android SDK 36, JDK 21.
 
 Keep the Gradle cache off the system drive by setting `GRADLE_USER_HOME` (this machine uses `D:\Android\.gradle`).
 
+## Test
+- Unit tests (on the computer): `./gradlew test`
+- Database migration test (needs a connected phone): `./gradlew :core-data:connectedDebugAndroidTest`
+- Release build check: switch the build variant to `release` and test on the phone (R8 is on). See the checklist.
+
+## Changing words users read
+The privacy policy, terms, user guide and release notes live in `docs/legal/*.txt` and are shared by the app and the web pages. After editing them run `bash tools/make-legal-pages.sh`, then the unit tests. Details in [docs/10-legal-about.md](docs/10-legal-about.md).
+
 ## Conventions
 - Version catalog: all dependency versions live in `gradle/libs.versions.toml`.
-- Every public class/function carries KDoc; comments explain *why*, not *what*.
-- Conventional commits (`feat:`, `fix:`, `docs:`, `chore:`), semantic versioning.
+- Every public class and function carries KDoc; comments explain *why*, not *what*.
+- Conventional commits (`feat:`, `fix:`, `docs:`, `chore:`), semantic versioning (see the release checklist).
+- Database changes bump the schema version, keep the exported schema file in `core-data/schemas` and get a migration test.
 - Secrets, keystores and signing files are never committed (see `.gitignore`).
+- Every change that alters what data is stored, collected or sent also updates `docs/legal/privacy.txt`.

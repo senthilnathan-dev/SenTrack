@@ -29,4 +29,11 @@ files, swaps them in, and rolls back if any step fails.
 - Done: snapshot engine, cron parser, vault header export, Drive REST client (fake-server tests), Google authorizer, backup manager, Backup screen (connect, back up now, list, restore, retention, passphrase-slot setting)
 - Done: account chooser (shows and pins the Google account, switch, disconnect), WorkManager scheduling (one delayed job to the next cron time, re-queued after each run; network policy and charging as constraints; 2 retries with back-off)
 - Done: plain-language schedules (ScheduleSpec: every N hours, daily, chosen weekdays, monthly, plus advanced cron) with a time picker, day chips and a next-run preview
-- Next: failure notifications (Phase 7), schedule in-app timeline of past runs
+- Done: monthly schedules work on any day of the month. Days 1 to 28 are exact; the 29th to 31st run on that day, or on the last day of a shorter month (`ScheduleSpec.MonthlyClamped`). Previews and the WorkManager job use the schedule's own `nextAfter`, which is exact for every kind
+- Not done: a failure notification for scheduled backups, an in-app history of past runs
+
+## What a backup contains (v0.5.0)
+The snapshot is the whole database file plus every vault file, so every feature is included automatically: Finance, Personal,
+Work, Career, reminders and the AI settings (including a saved API key, encrypted). Not included: the on-device AI model file
+(public and re-downloadable), caches, and the small private settings files (backup schedule, auto-lock time, reminder mirror), which
+are not part of the backup, so they start from defaults on a new phone and the schedule must be set again. Reminders themselves live in the database and are registered again with Android after unlocking.

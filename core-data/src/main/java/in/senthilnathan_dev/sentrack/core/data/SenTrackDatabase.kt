@@ -74,8 +74,10 @@ interface MetaDao {
  * The app's single encrypted database. Feature entities are added here phase by phase;
  * every schema change bumps [version] and ships a tested migration (schemas are exported).
  *
- * History: 1 = meta table. 2 = Finance tables. 3 = tax filings and documents. 4 = tax-year archive flag (never shipped
- * on its own). 5 = reminders. 6 = notes (folders, tags, attachments). 7 = habits and habit logs (never shipped alone; folded into the 6 to 8 migration). Version 4 was folded into the 3 to 5 auto-migration, so there is no 4.json schema file.
+ * History (full table in docs/15-data-model.md): 1 = meta. 2 = Finance. 3 = tax filings and documents. 4 = tax-year archive
+ * flag (never shipped alone). 5 = reminders. 6 = notes. 7 = habits (never shipped alone). 8 = plans, achievements, important
+ * dates. 9 to 11 = Work and Career steps (never built alone). 12 = Work and Career tables. 13 = repeating finance entries.
+ * Versions that never reached a phone have no schema file, so the auto-migration chain skips them (see AutoMigration below).
  */
 @Database(
     entities = [

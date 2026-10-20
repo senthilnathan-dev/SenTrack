@@ -1,7 +1,7 @@
-# Work: career (schema v11)
+# Career (schema v12)
 
 A top-level **Career** tab (separate from the employer-bound Work tab, because a career outlives any one company) with
-four sections: **Learning | Certificates | Job hunt | Resumes**.
+five sections: **Learning | Certificates | Job hunt | Resumes | Workspace**.
 
 * **Learning**: courses, books and skills with status (planned, learning, done), a progress slider and an optional
   target date.
@@ -16,10 +16,8 @@ four sections: **Learning | Certificates | Job hunt | Resumes**.
 
 Archive-not-delete everywhere (an "Archived (n)" button reveals them); permanent deletion needs the word DELETE typed.
 
-Pure logic (`CareerMath`, `JobStatus`) is unit-tested. Not yet built: the workspace of apps/sites with usage tracking and
-job-hunt statistics, learning reminders.
+Pure logic (`CareerMath`, `JobStatus`, `WorkspaceLogic`) is unit-tested. Not built: job-hunt statistics beyond the reply rate, and learning reminders.
 
-Migration: versions 9 and 10 were never built, so the chain is `8 -> 11`.
 
 ## Workspace (schema v12)
 
@@ -35,4 +33,7 @@ The fifth Career section lists the apps and websites you use for work. Each belo
 * **Checklists**: per company, a *Joining* and a *Leaving* list, seeded from a suggested template you can edit. The
   leaving page also lists the company's workspace items so you can archive them in one go.
 
-Migration: versions 9 to 11 were never built, so the chain is `8 -> 12`.
+Tables (all created in schema v12, see [15-data-model](15-data-model.md)): `learning_item`, `certification`, `job_application`, `interview`, `resume`, `career_attachment`, `workspace_item`, `checklist_item`. Code: `core-data/career`, `feature-career`.
+
+## AI in Career
+Job applications offer "Draft a follow-up email" and "Interview questions to prepare" (added to the application notes); Learning offers "Make a study plan". See [11-ai](11-ai.md).
