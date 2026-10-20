@@ -84,7 +84,7 @@ Allow notifications and alarms for SenTrack in Android settings. On some phones,
 
 # Backup and restore
 ## Google Drive backup
-In Settings, Backup to Google Drive, choose your Google account and tap Back up now, or set a schedule in plain words such as every day at 9 pm. Backups go to a hidden area of your own Drive and are already encrypted. You choose how many to keep.
+In Settings, Backup to Google Drive, choose your Google account and tap Back up now, or set a schedule in plain words such as every day at 9 pm or monthly on any day (in a shorter month, a 31st runs on that month's last day). Backups go to a hidden area of your own Drive and are already encrypted. You choose how many to keep.
 
 ## Restoring
 On a new phone, choose restore on the first screen, sign in to Google and pick a backup. You need your passphrase or recovery code to open it. Restoring replaces what is on the phone, and SenTrack checks the backup is intact first.

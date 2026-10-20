@@ -186,7 +186,7 @@ private fun repeatOf(spec: ScheduleSpec) = when (spec) {
     is ScheduleSpec.Weekly -> Repeat.WEEKLY
     is ScheduleSpec.Monthly -> Repeat.MONTHLY
     is ScheduleSpec.Yearly -> Repeat.CUSTOM   // not offered for backups; shown with the advanced option
-    is ScheduleSpec.MonthlyClamped -> Repeat.CUSTOM   // reminders only; backups offer days 1 to 28
+    is ScheduleSpec.MonthlyClamped -> Repeat.MONTHLY
     is ScheduleSpec.Custom -> Repeat.CUSTOM
 }
 
@@ -194,6 +194,7 @@ private fun timeOf(spec: ScheduleSpec): LocalTime = when (spec) {
     is ScheduleSpec.Daily -> spec.time
     is ScheduleSpec.Weekly -> spec.time
     is ScheduleSpec.Monthly -> spec.time
+    is ScheduleSpec.MonthlyClamped -> spec.time
     else -> LocalTime.of(2, 0)
 }
 
@@ -230,7 +231,13 @@ private fun AutomaticSection(state: BackupUiState, actions: BackupActions) {
                     Repeat.WEEKLY -> actions.onSetSchedule(
                         ScheduleSpec.Weekly((spec as? ScheduleSpec.Weekly)?.days ?: setOf(DayOfWeek.SUNDAY), timeOf(spec)),
                     )
-                    Repeat.MONTHLY -> actions.onSetSchedule(ScheduleSpec.Monthly((spec as? ScheduleSpec.Monthly)?.dayOfMonth ?: 1, timeOf(spec)))
+                    Repeat.MONTHLY -> actions.onSetSchedule(
+                        when (spec) {
+                            is ScheduleSpec.Monthly -> spec
+                            is ScheduleSpec.MonthlyClamped -> spec
+                            else -> ScheduleSpec.Monthly(1, timeOf(spec))
+                        },
+                    )
                     Repeat.CUSTOM -> Unit
                 }
             }
@@ -270,23 +277,37 @@ private fun AutomaticSection(state: BackupUiState, actions: BackupActions) {
                 TimeButton("Time:", timeOf(spec)) { t -> weekly?.let { actions.onSetSchedule(it.copy(time = t)) } }
             }
             Repeat.MONTHLY -> {
-                val monthly = spec as? ScheduleSpec.Monthly
-                val day = monthly?.dayOfMonth ?: 1
+                val day = when (spec) {
+                    is ScheduleSpec.Monthly -> spec.dayOfMonth
+                    is ScheduleSpec.MonthlyClamped -> spec.dayOfMonth
+                    else -> 1
+                }
+                /** Days 1 to 28 are exact; 29 to 31 mean "that day, or the last day of a shorter month". */
+                fun setDay(newDay: Int) = actions.onSetSchedule(
+                    if (newDay <= 28) ScheduleSpec.Monthly(newDay, timeOf(spec)) else ScheduleSpec.MonthlyClamped(newDay, timeOf(spec)),
+                )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Text("On the ${ScheduleSpec.ordinal(day)} of each month", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-                    IconAction(Icons.Filled.Remove, "Earlier day of the month", { monthly?.let { actions.onSetSchedule(it.copy(dayOfMonth = (day - 1).coerceAtLeast(1))) } })
-                    IconAction(Icons.Filled.Add, "Later day of the month", { monthly?.let { actions.onSetSchedule(it.copy(dayOfMonth = (day + 1).coerceAtMost(28))) } })
+                    Text(
+                        if (day == 31) "On the last day of each month" else "On the ${ScheduleSpec.ordinal(day)} of each month",
+                        modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge,
+                    )
+                    IconAction(Icons.Filled.Remove, "Earlier day of the month", { setDay((day - 1).coerceAtLeast(1)) })
+                    IconAction(Icons.Filled.Add, "Later day of the month", { setDay((day + 1).coerceAtMost(31)) })
                 }
-                Text(
-                    "Days 29 to 31 are not offered because not every month has them.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                TimeButton("Time:", timeOf(spec)) { t -> monthly?.let { actions.onSetSchedule(it.copy(time = t)) } }
+                if (day > 28) {
+                    Text(
+                        "In a month with fewer days, the backup runs on that month's last day.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                TimeButton("Time:", timeOf(spec)) { t ->
+                    actions.onSetSchedule(if (day <= 28) ScheduleSpec.Monthly(day, t) else ScheduleSpec.MonthlyClamped(day, t))
+                }
             }
             Repeat.CUSTOM -> OutlinedTextField(
                 value = state.customCron,

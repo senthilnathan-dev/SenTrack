@@ -67,14 +67,16 @@ class BackupViewModel(app: Application) : AndroidViewModel(app) {
         scheduleEnabled = settings.scheduleEnabled,
         schedule = settings.schedule,
         customCron = (settings.schedule as? ScheduleSpec.Custom)?.cron.orEmpty(),
-        nextRuns = previewRuns(settings.cron),
+        nextRuns = previewRuns(settings.schedule),
         network = settings.network,
         requireCharging = settings.requireCharging,
     )
 
-    /** Next three run times for [cron], or empty if it is invalid. */
-    private fun previewRuns(cron: String): List<Long> =
-        CronSchedule.parseOrNull(cron)?.nextRuns(ZonedDateTime.now(), 3)?.map { it.toInstant().toEpochMilli() } ?: emptyList()
+    /** Next three run times of [spec] (exact, including "last day of the month"), or empty if it cannot be computed. */
+    private fun previewRuns(spec: ScheduleSpec): List<Long> = runCatching {
+        var t = ZonedDateTime.now()
+        List(3) { t = spec.nextAfter(t); t.toInstant().toEpochMilli() }
+    }.getOrDefault(emptyList())
 
     /** Re-reads settings and, when connected, the list of backups in Drive. */
     fun refresh() {
@@ -122,7 +124,7 @@ class BackupViewModel(app: Application) : AndroidViewModel(app) {
                 schedule = spec,
                 customCron = (spec as? ScheduleSpec.Custom)?.cron ?: it.customCron,
                 customCronError = null,
-                nextRuns = previewRuns(spec.toCron()),
+                nextRuns = previewRuns(spec),
             )
         }
     }

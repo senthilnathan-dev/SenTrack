@@ -31,13 +31,13 @@ class BackupScheduler(private val context: Context, private val settings: Backup
      */
     fun reschedule(policy: ExistingWorkPolicy = ExistingWorkPolicy.REPLACE) {
         val work = WorkManager.getInstance(context)
-        val cron = CronSchedule.parseOrNull(settings.cron)
-        if (!settings.scheduleEnabled || !settings.connected || cron == null) {
+        val now = ZonedDateTime.now()
+        val next = runCatching { settings.schedule.nextAfter(now) }.getOrNull()
+        if (!settings.scheduleEnabled || !settings.connected || next == null) {
             work.cancelUniqueWork(WORK_NAME)
             return
         }
-        val now = ZonedDateTime.now()
-        val delay = Duration.between(now, cron.nextAfter(now))
+        val delay = Duration.between(now, next)
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(
                 when (settings.network) {
