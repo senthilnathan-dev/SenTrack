@@ -61,4 +61,35 @@ class RecurringMathTest {
         assertEquals("Every month on the 22nd", RecurringMath.describe(rule(day = 22)))
         assertEquals("Every month on the 11th", RecurringMath.describe(rule(day = 11)))
     }
+
+    @Test
+    fun lastDay_clampsToShortMonths() {
+        val r = rule(day = 31, start = d(2026, 1, 1))
+        // Jan 31, Feb 28 (2026 is not a leap year), Mar 31, Apr 30.
+        assertEquals(
+            listOf(d(2026, 1, 31), d(2026, 2, 28), d(2026, 3, 31), d(2026, 4, 30)),
+            RecurringMath.pendingDates(r, d(2026, 4, 30)),
+        )
+        assertEquals(d(2028, 2, 29), RecurringMath.pendingDates(rule(day = 31, start = d(2028, 2, 1)), d(2028, 2, 29)).single())   // leap year
+    }
+
+    @Test
+    fun day30_fallsOnFebruaryLastDay() {
+        assertEquals(d(2026, 2, 28), RecurringMath.pendingDates(rule(day = 30, start = d(2026, 2, 1)), d(2026, 2, 28)).single())
+        assertEquals(d(2026, 3, 30), RecurringMath.pendingDates(rule(day = 30, start = d(2026, 3, 1)), d(2026, 3, 30)).single())
+    }
+
+    @Test
+    fun nextDue_alsoClamps() {
+        assertEquals(d(2026, 4, 30), RecurringMath.nextDue(rule(day = 31, start = d(2026, 1, 1)), d(2026, 4, 1)))
+        assertEquals(d(2026, 2, 28), RecurringMath.nextDue(rule(day = 29, start = d(2026, 1, 1), last = d(2026, 1, 29)), d(2026, 2, 1)))
+    }
+
+    @Test
+    fun describesTheLongDays() {
+        assertEquals("Every month on the last day", RecurringMath.describe(rule(day = 31)))
+        assertEquals("Every month on the 30th (the last day in shorter months)", RecurringMath.describe(rule(day = 30)))
+        assertEquals("Last day of the month", RecurringMath.dayLabel(31))
+        assertEquals("15th", RecurringMath.dayLabel(15))
+    }
 }

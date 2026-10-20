@@ -43,7 +43,7 @@ object ReminderTiming {
         val repeat = def.repeat
         if (repeat != null) {
             val from = ZonedDateTime.ofInstant(Instant.ofEpochMilli(afterMillis), zone)
-            return CronSchedule.parse(repeat.toCron()).nextAfter(from).toInstant().toEpochMilli()
+            return repeat.nextAfter(from).toInstant().toEpochMilli()
         }
         return def.oneOffAtMillis?.takeIf { it > afterMillis }
     }

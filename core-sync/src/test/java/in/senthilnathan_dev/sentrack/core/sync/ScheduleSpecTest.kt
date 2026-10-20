@@ -133,4 +133,26 @@ class ScheduleSpecTest {
         val from = ZonedDateTime.of(2026, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)
         assertEquals(ZonedDateTime.of(2028, 2, 29, 8, 0, 0, 0, ZoneOffset.UTC), CronSchedule.parse(leap.toCron()).nextAfter(from))
     }
+
+    @Test
+    fun monthlyClamped_usesTheLastDayOfShortMonths() {
+        val s = ScheduleSpec.MonthlyClamped(31, LocalTime.of(9, 0))
+        val zone = ZoneOffset.UTC
+        fun next(y: Int, m: Int, d: Int) = s.nextAfter(ZonedDateTime.of(y, m, d, 10, 0, 0, 0, zone)).toLocalDate()
+        assertEquals(java.time.LocalDate.of(2026, 2, 28), next(2026, 1, 31))   // after Jan 31 morning: the next is Feb 28
+        assertEquals(java.time.LocalDate.of(2026, 4, 30), next(2026, 3, 31))
+        assertEquals(java.time.LocalDate.of(2028, 2, 29), next(2028, 1, 31))   // leap year
+        assertEquals(java.time.LocalDate.of(2026, 1, 31), s.nextAfter(ZonedDateTime.of(2026, 1, 15, 0, 0, 0, 0, zone)).toLocalDate())
+    }
+
+    @Test
+    fun monthlyClamped_roundTripsAndDescribes() {
+        val s = ScheduleSpec.MonthlyClamped(30, LocalTime.of(9, 0))
+        assertEquals(s, ScheduleSpec.decode(s.encode()))
+        assertEquals("Monthly on the last day at 9:00 AM", ScheduleSpec.MonthlyClamped(31, LocalTime.of(9, 0)).describe())
+        assertEquals("Monthly on the 30th (the last day in shorter months) at 9:00 AM", s.describe())
+        try {
+            ScheduleSpec.MonthlyClamped(28, LocalTime.of(9, 0)); fail()
+        } catch (e: IllegalArgumentException) { /* expected */ }
+    }
 }

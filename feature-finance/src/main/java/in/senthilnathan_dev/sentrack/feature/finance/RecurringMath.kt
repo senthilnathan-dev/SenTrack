@@ -1,6 +1,7 @@
 package `in`.senthilnathan_dev.sentrack.feature.finance
 
 import `in`.senthilnathan_dev.sentrack.core.data.finance.RecurringEntity
+import `in`.senthilnathan_dev.sentrack.core.sync.ScheduleSpec
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -30,7 +31,7 @@ internal object RecurringMath {
         val out = ArrayList<LocalDate>()
         var month = YearMonth.from(from)
         while (!month.atDay(1).isAfter(today)) {
-            val date = month.atDay(r.dayOfMonth.coerceIn(1, 28))
+            val date = month.atDay(r.dayOfMonth.coerceIn(1, month.lengthOfMonth()))
             if (!date.isBefore(from) && !date.isAfter(today) && withinEnd(r, date)) out += date
             month = month.plusMonths(1)
         }
@@ -43,7 +44,7 @@ internal object RecurringMath {
         val from = maxOf(earliest(r), today)
         var month = YearMonth.from(from)
         repeat(14) {
-            val date = month.atDay(r.dayOfMonth.coerceIn(1, 28))
+            val date = month.atDay(r.dayOfMonth.coerceIn(1, month.lengthOfMonth()))
             if (!date.isBefore(from)) return date.takeIf { withinEnd(r, it) }
             month = month.plusMonths(1)
         }
@@ -55,5 +56,20 @@ internal object RecurringMath {
         return "$day$suffix"
     }
 
-    fun describe(r: RecurringEntity) = "Every month on the ${ordinal(r.dayOfMonth)}"
+    /** Day-of-month choices: 1 to 30, then 31 meaning "the last day". Months too short use their last day. */
+    const val LAST_DAY = 31
+
+    fun dayLabel(day: Int) = if (day >= LAST_DAY) "Last day of the month" else ordinal(day)
+
+    fun describe(r: RecurringEntity) = when {
+        r.dayOfMonth >= LAST_DAY -> "Every month on the last day"
+        r.dayOfMonth > 28 -> "Every month on the ${ordinal(r.dayOfMonth)} (the last day in shorter months)"
+        else -> "Every month on the ${ordinal(r.dayOfMonth)}"
+    }
+}
+
+/** The reminder schedule for a day of the month: exact for 1 to 28, last-day-aware for 29 to 31. */
+internal fun reminderSpec(day: Int): ScheduleSpec {
+    val nine = java.time.LocalTime.of(9, 0)
+    return if (day <= 28) ScheduleSpec.Monthly(day, nine) else ScheduleSpec.MonthlyClamped(day.coerceAtMost(31), nine)
 }

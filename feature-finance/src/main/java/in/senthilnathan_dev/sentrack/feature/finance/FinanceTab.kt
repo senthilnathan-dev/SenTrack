@@ -142,7 +142,7 @@ fun FinanceTab(repo: FinanceRepository, reminderRepo: ReminderRepository, files:
                 reminderRepo.save(
                     ReminderEntity(
                         id = id, title = r.name, note = null, ownerKind = "finance:recurring", ownerId = r.id, style = "NOTIFICATION",
-                        oneOffAtMillis = null, repeatEncoded = ScheduleSpec.Monthly(r.dayOfMonth, java.time.LocalTime.of(9, 0)).encode(),
+                        oneOffAtMillis = null, repeatEncoded = reminderSpec(r.dayOfMonth).encode(),
                         enabled = true, completed = false, createdAtMillis = System.currentTimeMillis(),
                     ),
                 )

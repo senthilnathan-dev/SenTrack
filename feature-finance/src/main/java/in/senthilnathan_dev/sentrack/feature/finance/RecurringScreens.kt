@@ -135,7 +135,7 @@ internal fun RecurringEditorScreen(
     var accountId by rememberSaveable { mutableStateOf(existing?.accountId) }
     var toAccountId by rememberSaveable { mutableStateOf(existing?.toAccountId) }
     var categoryId by rememberSaveable { mutableStateOf(existing?.categoryId) }
-    var day by rememberSaveable { mutableStateOf(existing?.dayOfMonth ?: LocalDate.now().dayOfMonth.coerceIn(1, 28)) }
+    var day by rememberSaveable { mutableStateOf(existing?.dayOfMonth ?: LocalDate.now().dayOfMonth) }
     var start by rememberSaveable { mutableStateOf(existing?.startEpochDay ?: LocalDate.now().toEpochDay()) }
     var hasEnd by rememberSaveable { mutableStateOf(existing?.endEpochDay != null) }
     var end by rememberSaveable { mutableStateOf(existing?.endEpochDay ?: LocalDate.now().plusYears(1).toEpochDay()) }
@@ -213,8 +213,8 @@ internal fun RecurringEditorScreen(
             }
         }
         Section("When") {
-            PickerField("Day of the month", RecurringMath.ordinal(day), (1..28).map { RecurringMath.ordinal(it) to it }) { day = it }
-            Text("Days 29 to 31 are not offered because not every month has them.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            PickerField("Day of the month", RecurringMath.dayLabel(day), (1..31).map { RecurringMath.dayLabel(it) to it }) { day = it }
+            Text("In a month that is too short the entry falls on its last day, so a 30th becomes 28 or 29 February. \"Last day of the month\" is always the final day.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             DateField("Starting from", start) { start = it }
             SwitchRow(title = "Ends on a date", checked = hasEnd, onChange = { hasEnd = it })
             if (hasEnd) DateField("Last date", end) { end = it }

@@ -4,6 +4,7 @@ import java.time.DayOfWeek
 import java.time.LocalTime
 import java.time.Month
 import java.time.YearMonth
+import java.time.ZonedDateTime
 import java.time.format.TextStyle
 import java.util.Locale
 
@@ -16,6 +17,9 @@ import java.util.Locale
  */
 sealed interface ScheduleSpec {
     fun toCron(): String
+
+    /** The first run strictly after [from]. Exact for every kind; the default follows [toCron]. */
+    fun nextAfter(from: ZonedDateTime): ZonedDateTime = CronSchedule.parse(toCron()).nextAfter(from)
 
     /** A sentence such as "Every day at 2:00 AM". */
     fun describe(): String
@@ -65,6 +69,36 @@ sealed interface ScheduleSpec {
         override fun encode() = "M|$dayOfMonth|${time.hour}:${time.minute}"
     }
 
+
+    /**
+     * Once a month on the 29th, 30th or 31st. Months too short for that day use their last day instead (a 31st becomes
+     * 30 April, 28 or 29 February...), which is how bills and salaries behave. [toCron] is only an approximation (the 28th)
+     * because cron cannot say "last day"; use [nextAfter], which is exact.
+     */
+    data class MonthlyClamped(val dayOfMonth: Int, val time: LocalTime) : ScheduleSpec {
+        init {
+            require(dayOfMonth in 29..31) { "Day must be 29 to 31; use Monthly for 1 to 28" }
+        }
+
+        override fun toCron() = "${time.minute} ${time.hour} 28 * *"
+        override fun describe() =
+            if (dayOfMonth == 31) "Monthly on the last day at ${formatTime(time)}"
+            else "Monthly on the ${ordinal(dayOfMonth)} (the last day in shorter months) at ${formatTime(time)}"
+
+        override fun encode() = "N|$dayOfMonth|${time.hour}:${time.minute}"
+
+        override fun nextAfter(from: ZonedDateTime): ZonedDateTime {
+            var month = YearMonth.from(from)
+            repeat(14) {
+                val date = month.atDay(minOf(dayOfMonth, month.lengthOfMonth()))
+                val at = ZonedDateTime.of(date, time, from.zone)
+                if (at.isAfter(from)) return at
+                month = month.plusMonths(1)
+            }
+            throw IllegalStateException("No next date found")
+        }
+    }
+
     /** Once a year on a fixed date (birthdays, anniversaries, renewals). 29 February is allowed and then only runs in leap years. */
     data class Yearly(val month: Int, val day: Int, val time: LocalTime) : ScheduleSpec {
         init {
@@ -103,6 +137,7 @@ sealed interface ScheduleSpec {
                 "D" -> Daily(time(parts[1]))
                 "W" -> Weekly(parts[1].split(',').map { DayOfWeek.of(it.toInt()) }.toSet(), time(parts[2]))
                 "M" -> Monthly(parts[1].toInt(), time(parts[2]))
+                "N" -> MonthlyClamped(parts[1].toInt(), time(parts[2]))
                 "Y" -> Yearly(parts[1].toInt(), parts[2].toInt(), time(parts[3]))
                 "C" -> Custom(parts.drop(1).joinToString("|"))
                 else -> null
