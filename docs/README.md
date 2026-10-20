@@ -10,7 +10,7 @@ by the app and the published web pages.
 | [01-architecture](01-architecture.md) | Modules, layers, dependency rules, data flow, state and threading |
 | [02-security-model](02-security-model.md) | Threat model, keys, encryption, what is stored outside the encrypted database |
 | [15-data-model](15-data-model.md) | Schema versions, tables by feature, migration chain and rules |
-| [adr/](adr) | Architecture decision records |
+| [adr/](adr) | Decision records: native Kotlin/Compose (0001), manual DI (0002), reminders mirror (0003), two AI engines (0004) |
 
 ## Cross-cutting features
 | Doc | What it covers |
