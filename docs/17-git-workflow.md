@@ -65,3 +65,15 @@ Use the issue forms. Labels: `bug`, `enhancement`, `docs`, `security`, `good fir
 - Create the labels and milestones listed above.
 - Replace the placeholder owner name `senthilnathan-dev` in `.github/CODEOWNERS` and `.github/ISSUE_TEMPLATE/config.yml` with the
   real GitHub account or organisation and repository name.
+
+## First push to GitHub (once)
+The local repository has no remote yet. After creating an empty repository on GitHub (no README, no licence, so nothing conflicts):
+```bash
+git switch main && git merge --ff-only feat/hardening     # bring main up to date (when the 0.5.0 build and tests are green)
+git tag -a v0.5.0 -m "SenTrack 0.5.0 (first internal-testing build)"
+git remote add origin https://github.com/<owner>/<repo>.git
+git push -u origin main --tags                             # pushing the v0.5.0 tag also starts the Release workflow
+```
+Then apply the recommended settings above, add the release secrets, replace the placeholder owner name in `CODEOWNERS` and
+`config.yml`, and check that the `CI` workflow passes on the first pull request. The CI and Release workflows have not run yet: expect
+to adjust the Android SDK setup steps once, since they depend on the GitHub runner image.
