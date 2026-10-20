@@ -14,6 +14,9 @@ class WorkspaceLogicTest {
         assertEquals("http://intranet/home", WorkspaceLogic.normalizeUrl("http://intranet/home"))
         assertNull(WorkspaceLogic.normalizeUrl("   "))
         assertNull(WorkspaceLogic.normalizeUrl("not a url"))
+        assertNull(WorkspaceLogic.normalizeUrl("file:///sdcard/secret.txt"))
+        assertNull(WorkspaceLogic.normalizeUrl("intent://scan/#Intent;end"))
+        assertNull(WorkspaceLogic.normalizeUrl("javascript://alert(1)"))
     }
 
     @Test

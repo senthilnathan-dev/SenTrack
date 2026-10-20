@@ -207,7 +207,7 @@ fun AiHost(onBack: () -> Unit) {
                 result?.let { out ->
                     Section("Result") {
                         Text(out, style = MaterialTheme.typography.bodyMedium)
-                        SecondaryButton("Copy", icon = Icons.Filled.ContentCopy, onClick = { (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText("SenTrack", out)) })
+                        SecondaryButton("Copy", icon = Icons.Filled.ContentCopy, onClick = { `in`.senthilnathan_dev.sentrack.core.ui.copySensitive(context, out) })
                     }
                 }
             }

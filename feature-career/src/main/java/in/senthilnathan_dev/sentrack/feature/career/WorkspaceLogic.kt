@@ -8,6 +8,9 @@ internal object WorkspaceLogic {
     fun normalizeUrl(input: String): String? {
         val t = input.trim()
         if (t.isEmpty() || t.any { it.isWhitespace() }) return null
+        // Only web addresses: anything else (file:, intent:, javascript:...) could do things a bookmark should not.
+        val scheme = if (t.contains("://")) t.substringBefore("://").lowercase() else "https"
+        if (scheme != "http" && scheme != "https") return null
         return if (t.contains("://")) t else "https://$t"
     }
 

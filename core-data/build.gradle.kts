@@ -12,10 +12,16 @@ android {
 
     defaultConfig {
         minSdk = 36
+        consumerProguardFiles("consumer-rules.pro")
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+    }
+    // Migration tests read the exported schema files as assets.
+    sourceSets {
+        getByName("androidTest").assets.srcDir("$projectDir/schemas")
     }
 }
 
@@ -31,4 +37,8 @@ dependencies {
     ksp(libs.androidx.room.compiler)
     // SQLCipher: AES-256 encryption of the whole database file (data, indexes, journal).
     implementation(libs.sqlcipher.android)
+
+    androidTestImplementation(libs.androidx.room.testing)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.test.runner)
 }

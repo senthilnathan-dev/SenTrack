@@ -215,11 +215,21 @@ fun AiAssistButton(
                 val o = outcome
                 Column {
                     if (o is AiOutcome.Text) TextButton(onClick = {
-                        (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText("SenTrack", o.text))
+                        copySensitive(context, o.text)
                     }) { Text("Copy") }
                     TextButton(onClick = { active = null }, enabled = !running) { Text(if (o is AiOutcome.Text) "Discard" else "Cancel") }
                 }
             },
         )
     }
+}
+
+/**
+ * Copies text to the clipboard marked as sensitive, so Android hides it from the clipboard preview and keyboard
+ * suggestions. The clipboard is still readable by apps that are in the foreground, so copy only when you mean to.
+ */
+fun copySensitive(context: Context, text: String) {
+    val clip = ClipData.newPlainText("SenTrack", text)
+    clip.description.extras = android.os.PersistableBundle().apply { putBoolean(android.content.ClipDescription.EXTRA_IS_SENSITIVE, true) }
+    (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(clip)
 }
