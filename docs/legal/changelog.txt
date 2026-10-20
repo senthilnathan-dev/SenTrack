@@ -1,0 +1,35 @@
+# 0.5.0 | 2026-10-20 | First internal-testing build
+## Added
+- Repeating monthly entries in Finance (salary, rent, SIPs, EMIs). Due ones appear as "Due now" on the Dashboard and are added or skipped with a tap. A reminder can ring on the day.
+- User guide inside the app (Settings, User guide).
+- "What's new" notes shown once after each update.
+- A proper app icon, including the themed (monochrome) version.
+## Changed
+- Privacy policy and terms rewritten to cover every feature (Work location, Career, AI, model download, clipboard).
+- Privacy policy, terms, user guide and release notes are now plain text files shared by the app and the published web pages, so they cannot drift apart.
+## Security
+- Workspace links accept only web addresses (http and https).
+- Text copied from the AI assistant is marked as sensitive on the clipboard.
+- Release builds keep the classes the database and the on-device AI runtime need.
+- Automatic tests now check that old databases upgrade to the current one without losing data.
+
+# 0.4.0 | 2026-10-20 | Development build
+## Added
+- Career: learning, certificates with renewal reminders, job hunt with interview reminders, resume versions, a workspace of apps and sites you use, and joining and leaving checklists.
+- Work: companies, punch in and out with one-tap location, leave policy and calendar, tasks with a daily summary, appreciation records with proof files, and permissions.
+- Personal: plans, wishlist and bucket list, achievements, important dates with reminders, a timeline, habits with streaks, and a modern notes editor.
+- AI assistant, off by default: an on-device model set up with one tap and tested on your phone, or a cloud provider with your own key. Sparkle buttons in notes, plans, work, career and finance. Fast, Normal and Accurate answer styles.
+- Settings, About SenTrack: version, privacy policy, terms, open-source licences.
+- Reminders that ring even while the app is locked.
+
+# 0.3.0 | 2026-09 | Development build
+## Added
+- Finance: accounts, transactions, budgets, goals, investments with gains and losses, dashboard, tax filings and documents.
+
+# 0.2.0 | 2026-09 | Development build
+## Added
+- Encrypted backup and restore with Google Drive, manual and scheduled.
+
+# 0.1.0 | 2026-09 | Development build
+## Added
+- Security core: passphrase, recovery code, biometric unlock, encrypted database and file vault, auto-lock.

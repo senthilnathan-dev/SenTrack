@@ -1,0 +1,30 @@
+# SenTrack terms of use
+
+## Agreement
+Effective 20 October 2026 (app version 0.5.0).
+
+By using SenTrack you agree to these terms. SenTrack is a personal record-keeping tool provided by its developer for your own use.
+
+## Your data, your responsibility
+You are responsible for keeping your passphrase and recovery code safe. They are the only way to open your data, and SenTrack cannot reset them. Keep backups if the data matters to you.
+
+## Not advice
+Calculations, summaries and reminders (including finance totals, gains and losses, tax-year grouping, leave balances and anything written by the AI assistant) are aids to your own record-keeping. They are not financial, investment, tax, legal, medical or employment advice and may contain mistakes. AI answers can be wrong or invented, even when they sound sure. Check important figures and facts against official records before relying on them.
+
+## Acceptable use
+Use SenTrack lawfully and only for information you have the right to keep. Do not try to break its protections, and do not use it to interfere with Google or any other service.
+
+## Reminders and alarms
+Phones can silence alarms or stop background work to save battery. Do not rely on a reminder alone for anything critical.
+
+## Third-party services and software
+The optional Google Drive backup is subject to Google's terms. The optional AI assistant, if you use a cloud provider with your own key, is subject to that provider's terms and charges. The optional on-device model is an open model subject to its own licence, shown on the setup screen. SenTrack includes open-source software under its own licences, listed under Open-source licenses.
+
+## No warranty
+SenTrack is provided as it is, without warranties of any kind. To the fullest extent the law allows, the developer is not liable for lost data, missed reminders, incorrect figures or any indirect loss arising from its use.
+
+## Changes
+These terms may be updated with new versions of the app. Continuing to use SenTrack after an update means you accept the updated terms.
+
+## Contact
+libertariansenthil@gmail.com

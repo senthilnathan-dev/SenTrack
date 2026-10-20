@@ -1,0 +1,107 @@
+# Getting started
+## Your passphrase and recovery code
+The first time you open SenTrack you choose a passphrase (at least 12 characters) and receive a recovery code. Write the recovery code down and keep it somewhere safe, apart from your phone. If you forget your passphrase, the recovery code is the only way back in. Nobody can reset either one, not even the developer.
+
+## The four areas
+The bar at the bottom switches between Finance, Personal, Work and Career. Inside each area, the tabs just above that bar switch between its pages. The bell at the top opens Reminders, the gear opens Settings, and the padlock locks the app straight away.
+
+## Locking
+SenTrack locks when the screen turns off and after the time you set in Settings, Auto-lock. Turn on biometric unlock in Settings to use your fingerprint or face instead of typing the passphrase.
+
+## Archiving and deleting
+Almost everything can be archived instead of deleted. Archived items are hidden but kept; look for the "Archived" button on a list. Permanent deletion asks you to type DELETE, so it cannot happen by accident.
+
+# Finance
+## Accounts
+Add the places your money sits: bank accounts, cash and wallets (spendable), and investments such as mutual funds, gold, FD, RD and PF. Investment accounts track what you put in and what you take out.
+
+## Entries
+Tap Add entry. Choose Expense, Income, Transfer, Invest or Withdraw. When you withdraw from an investment, enter what you received and how much of your invested money it returns; SenTrack works out the gain or loss.
+
+## Dashboard
+Shows your net worth, this month's income, spending and savings, where the money went, six-month cash flow, investment allocation, goals and financial-year totals. Net worth counts investments at the amount you put in; SenTrack does not follow live prices.
+
+## Repeating entries
+In Finance, Plan, Repeating entries, add things that happen every month: salary, rent, a SIP, an EMI. When one comes due it appears as Due now on the Dashboard. Tap Add entry to record it or Skip to move on. Nothing changes your balances until you tap. Turn on the reminder to be told at 9 am on the day.
+
+## Budgets, goals and tax
+Set monthly budgets per category and savings goals linked to your accounts in the Plan tab. Tax years keep your filing details and documents (Form 16, proofs, acknowledgements), encrypted. SenTrack stores them; it does not read or file anything for you.
+
+# Personal
+## Notes
+Write with simple formatting, add folders and tags, pin notes, and attach photos, PDFs and videos (encrypted). The editor has undo and redo, continues lists when you press Enter, and suggests words from your own notes. Tap the eye to switch between reading and editing.
+
+## Habits
+Daily, weekly, monthly, quarterly or yearly habits, either done or not, or with a number such as glasses of water. See streaks, success rate and a calendar. Missed days can be filled in by stepping back a day.
+
+## Plans
+Goals, plans, wishlist and bucket-list items with steps, priority, target date and cost. Progress follows the steps you tick. A reminder can ring on the target date.
+
+## Moments
+Achievements (with certificates or photos attached) and important dates such as birthdays and anniversaries. Yearly dates show ages and anniversaries and can remind you days ahead.
+
+## Timeline
+One list of your notes, achievements, important dates and finished plans, newest first, with search.
+
+# Work
+## Companies
+Add the company you work for. Everything else in Work belongs to a company, so changing jobs never mixes records. When you leave, choose "I have left this company": the records are kept and tucked away. Permanent deletion needs the company name typed.
+
+## Punch in and out
+Tap Punch in when you start and Punch out when you finish. If you allow location, the place is noted at that moment only. You can punch more than once a day.
+
+## Leave
+Each company has its own leave year and leave types with yearly quotas. Add leave and SenTrack counts working days (Monday to Friday) and shows what is left and a month calendar.
+
+## Tasks
+Add tasks with a due date and priority. Today at a glance shows what is open, due today and overdue.
+
+## Records
+Keep appreciation (a mail or message with the screenshot attached) for appraisal time, and log permissions such as late arrivals, with a reason.
+
+# Career
+## Learning and certificates
+Track courses, books and skills with progress. Record certifications with an expiry date and attach the certificate; SenTrack reminds you a month before it expires.
+
+## Job hunt and resumes
+Follow each application from wishlist to offer. Add interviews and get a reminder an hour before. Keep each version of your resume and pick the one you sent.
+
+## Workspace
+List the apps and websites you use. Open them from SenTrack to keep a count of how often you use each. For each company there is a joining and a leaving checklist; the leaving one lets you archive that company's apps and sites in one go.
+
+# Reminders
+## How reminders work
+Reminders ring even while SenTrack is locked, so the notification is generic ("SenTrack reminder") unless you choose to show the text. Open the bell to see, add and manage them. You can snooze or mark done from the notification.
+
+## If a reminder did not ring
+Allow notifications and alarms for SenTrack in Android settings. On some phones, battery saving can stop alarms: set SenTrack's battery use to unrestricted. Do not rely on a reminder alone for anything critical.
+
+# Backup and restore
+## Google Drive backup
+In Settings, Backup to Google Drive, choose your Google account and tap Back up now, or set a schedule in plain words such as every day at 9 pm. Backups go to a hidden area of your own Drive and are already encrypted. You choose how many to keep.
+
+## Restoring
+On a new phone, choose restore on the first screen, sign in to Google and pick a backup. You need your passphrase or recovery code to open it. Restoring replaces what is on the phone, and SenTrack checks the backup is intact first.
+
+# AI assistant
+## Turning it on
+AI is optional and off by default. Settings, AI assistant. You can use a small model that runs on your phone (nothing leaves it), a cloud provider with your own key, or both.
+
+## On-device model
+Tap Set up on-device AI. SenTrack picks a model that suits your phone, downloads it (use Wi-Fi), checks it is intact and tests its speed and accuracy. If it is too slow it offers a smaller one. You do not configure anything.
+
+## Using it
+Look for the sparkle button in notes, plans, achievements, work tasks, job applications, learning and finance. Pick what you want, then use, copy or discard the answer. Choose Fast, Normal or Accurate: Fast is brief and quick, Accurate is most careful and checks its own answer, so it takes about twice as long.
+
+## Check what it writes
+AI can be wrong. SenTrack warns when an answer contains numbers that were not in your text, or drops numbers that should stay. Always check amounts and dates.
+
+# Tips and troubleshooting
+## Keyboard suggestions missing
+Some keyboards hide suggestions in windows that block screenshots. The notes editor has its own word suggestions from your notes.
+
+## The app locked while I was in another screen
+Choosing a file or signing in to Google does not lock the app. If it locks sooner than you expect, raise the time in Settings, Auto-lock.
+
+## Where is my data?
+Only on your phone, encrypted, plus any backup you made to your own Google Drive. The About page links to the privacy policy.

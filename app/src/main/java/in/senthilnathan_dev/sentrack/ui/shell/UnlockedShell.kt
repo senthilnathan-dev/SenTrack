@@ -106,6 +106,7 @@ fun UnlockedShell(
         // The bottom bar above already pads for the system navigation bar, so screens inside must not pad again.
         CompositionLocalProvider(LocalBottomInsetHandled provides true, LocalExternalFlowStarter provides onExternalFlow, LocalAiAssist provides aiAssist) {
             Box(modifier = Modifier.padding(padding)) {
+                `in`.senthilnathan_dev.sentrack.ui.about.WhatsNewDialog()
                 if (showReminders) {
                     RemindersScreen(reminders, reminderCenter, onBack = { showReminders = false })
                     return@Box

@@ -40,3 +40,9 @@ is still open. This is a developer review, not a penetration test.
 * **No certificate pinning** for the cloud services; standard TLS only. Reasonable for this threat model.
 * **Clipboard**: copied text is still readable by the foreground app; the AI dialog is the only place that copies.
 * **Not reviewed**: a hostile `.litertlm` model file (the catalog is pinned by hash, so only listed models load).
+
+## Addendum (0.5.0)
+* `FLAG_SECURE` is skipped only when the app is **debuggable** (debug builds, so store screenshots can be taken). Release
+  builds, the only ones users install, always set it. Verify on the release build that screenshots are blocked.
+* The privacy policy, terms and user guide are now tested against the code (permissions and network services must be
+  described), see `docs/10-legal-about.md`.

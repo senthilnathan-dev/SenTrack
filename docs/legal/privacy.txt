@@ -1,0 +1,53 @@
+# SenTrack privacy policy
+
+## Summary
+Effective 20 October 2026 (app version 0.5.0).
+
+SenTrack is a personal tracker for your finances, personal life, work and career. Your information stays on your phone, encrypted. There are no accounts, no advertising, no analytics and no tracking. SenTrack never sends your data to its developer. The only times anything leaves your phone are features you choose to switch on, described below.
+
+## Who is responsible
+SenTrack is made by Senthilnathan, an individual developer. Contact: libertariansenthil@gmail.com.
+
+## What SenTrack stores on your phone
+Only what you enter or choose to attach:
+- Finance: accounts, transactions, categories, budgets, goals, repeating entries, tax years and the tax documents you attach.
+- Personal: notes and their attachments, habits and their history, plans, wishlist and bucket-list items, achievements, important dates.
+- Work: companies, attendance (punch times and, if you allow it, the place you were), leave, tasks, appreciation records and their proof files, permissions.
+- Career: learning, certifications and certificates, job applications and interviews, resumes, and the apps and websites you list in your workspace.
+- Reminders, settings, and (if you use the AI assistant with your own key) that key.
+All of it is stored only on your phone.
+
+## How it is protected
+Data is kept in an encrypted database, and attached files in an encrypted file vault. Both are opened by a key that only your passphrase (or your fingerprint or face, if you turn that on) can unlock. SenTrack locks itself when the screen turns off or after the time you choose, and hides its contents from screenshots, screen recording and the recent-apps view. SenTrack cannot read your data without your passphrase, and neither can the developer. If you lose both your passphrase and your recovery code, your data cannot be recovered.
+
+## What can leave your phone, only if you choose it
+1. Google Drive backup (optional). When you switch it on, SenTrack uploads an already-encrypted backup file to a private, hidden area of your own Google Drive that only SenTrack can open. Google receives that encrypted file and your Google account details under Google's own terms and privacy policy.
+2. AI assistant, cloud provider (optional, off by default). If you turn the assistant on and add your own API key for Google Gemini, OpenAI or Anthropic Claude, then when you ask for help the text you chose is sent to that provider under their terms. SenTrack shows you exactly what will be sent and waits for you to confirm. Nothing is sent in the background and none of your records are shared automatically. Your key is stored encrypted on your phone and is included in your encrypted backups.
+3. AI assistant, on-device model (optional). A small open model can run entirely on your phone, so nothing you type is sent anywhere. SenTrack downloads that model file once, when you tap the setup button, from Hugging Face, a public file host. Your phone contacts that service the way it would for any website visit (your internet address is visible to it); no personal data and no account are involved.
+4. Files you export or share yourself, and text you copy from the assistant, leave SenTrack in readable form. Handle them with care. Text copied from the assistant is marked as sensitive, but other apps in the foreground may still be able to read the clipboard.
+Apart from these, SenTrack makes no network connections.
+
+## Permissions SenTrack may ask for
+- Notifications and exact alarms: to ring your reminders. Reminders show a generic "SenTrack reminder" on the lock screen unless you choose to show the text.
+- Location: only at the moment you tap Punch in or Punch out, and only if you allow it. The place is saved with that attendance record on your phone. SenTrack never tracks your location in the background.
+- Biometrics: only to unlock with your fingerprint or face. SenTrack does not receive your fingerprint or face data; Android handles it.
+- Network access: for the optional features above.
+SenTrack does not read your SMS, contacts, call history or photos. It only reads files you pick yourself.
+
+## Apps and websites in Workspace
+SenTrack remembers the names and addresses you add, and how many times you opened each from SenTrack. It does not watch what you do inside those apps and sites.
+
+## Your control
+You can export attachments, make and restore backups, archive items, or delete items, companies and the whole app's data. Uninstalling SenTrack removes its data from the phone. A Google Drive backup stays in your Drive until you remove it there. A downloaded AI model can be removed from the AI settings.
+
+## Retention
+SenTrack keeps your data until you delete it. The developer holds none of it.
+
+## Children
+SenTrack is not directed at children and does not knowingly collect information about them.
+
+## Changes to this policy
+If this policy changes, the new version ships with the app update that needs it, the "What's new" page says so, and the effective date above changes.
+
+## Contact
+Questions or requests: libertariansenthil@gmail.com.

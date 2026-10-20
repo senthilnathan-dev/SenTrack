@@ -1,35 +1,56 @@
-# Release checklist (not done yet)
+# Release process and checklist
 
-What is still needed before SenTrack goes to the Play Store. Tick items off here as they are done.
+Releases: **0.5.0** goes to Play **internal testing**; after testing and fixes, **1.0.0** is the first public release;
+then 1.x for improvements and bug fixes (1.0.1, 1.1.0, ...).
 
-## Build and signing
-- [ ] Create an **upload key** once and keep it safe, outside the repository (the `.gitignore` already excludes keystores):
-      `keytool -genkeypair -v -keystore sentrack-upload.jks -alias upload -keyalg RSA -keysize 4096 -validity 10000`
-- [ ] Back the keystore and its passwords up in two places. Losing the upload key is recoverable with Play App Signing; losing
-      the *app signing* key is not, so enrol in **Play App Signing** (default for new apps).
-- [ ] Add a `signingConfigs.release` that reads the keystore path and passwords from `local.properties` or environment
-      variables, never from the repository.
-- [ ] Build the **App Bundle**: `./gradlew :app:bundleRelease`. Test the *release* build on the phone (R8 is on): every tab,
-      on-device AI, backup and restore, reminders after a reboot, biometric unlock.
-- [ ] Run `./gradlew :core-data:connectedDebugAndroidTest` (migration test) on the phone.
-- [ ] Bump `versionCode` for every upload; keep `versionName` and the changelog in `AboutContent.kt` in step.
+## Versioning
+* `versionName`: 0.5.0 -> 1.0.0 -> 1.0.1 (bug fix) -> 1.1.0 (new features). Pre-1.0 numbers are testing builds.
+* `versionCode`: a whole number that **must increase with every upload** to Play (currently 5). Never reuse one.
+* Both live in `app/build.gradle.kts`. The changelog's first entry must match `versionName` (a unit test checks).
 
-## Store requirements
-- [ ] **Privacy policy URL** (public page). Publish the text from `AboutContent.privacy`; get it reviewed.
-- [ ] **Data safety form**: the app collects no data on its own servers. Declare: optional Google Drive backup (user's own
-      Drive), optional AI requests to a provider the user chooses with their own key, location only on punch (stays on the
-      device), a one-off model download from Hugging Face. Data is encrypted at rest; users can delete it.
-- [ ] **Permissions declarations**: exact alarms (reminders), notifications, location (punch in/out), biometric. Have a
-      sentence ready for each.
-- [ ] App content: target audience (adults), no ads, no user-generated content shared with others.
-- [ ] **Listing**: name, short and full description, at least 2 phone screenshots (taken with a debug build, since release
-      builds block screenshots by design), a 512 px icon and a 1024x500 feature graphic.
-- [ ] A real **launcher icon** (the current one is the template default).
-- [ ] Pick the track: **Internal testing** first (up to 100 testers, no review wait), then Closed, then Production. New
-      personal developer accounts must run a closed test with at least 12 testers for 14 days before production.
+## Every release, in order
+1. Branch from `main`; make the changes.
+2. Add a release entry at the **top** of `docs/legal/changelog.txt` (Added / Changed / Fixed / Security, in plain
+   language for users).
+3. Update `docs/legal/privacy.txt`, `terms.txt` and `manual.txt` if behaviour changed.
+4. `bash tools/make-legal-pages.sh`.
+5. Bump `versionCode` and `versionName`.
+6. Run unit tests (`./gradlew test`) and the migration test on a phone (`./gradlew :core-data:connectedDebugAndroidTest`).
+   Add a migration test case for every schema version users may have.
+7. Build and test the **release** build on the phone (R8 is on): every tab, on-device AI, backup and restore, reminders after a
+   reboot, biometric unlock, upgrade over the previous build keeping data.
+8. Merge to `main`, tag `vX.Y.Z`, build the bundle, upload to the chosen Play track.
+9. Update the Play "What's new" text with the changelog entry (500 characters max).
 
-## Legal and product decisions still open
-- [ ] Public or private distribution.
-- [ ] Developer legal name and contact on the Terms and Privacy pages.
-- [ ] Generated third-party licence notices (replace the hand-written list).
-- [ ] Dependency vulnerability scan.
+## One-time setup: signing
+1. Create an upload key (keep it outside the repository; `.gitignore` already excludes keystores):
+   `keytool -genkeypair -v -keystore C:\keys\sentrack-upload.jks -alias upload -keyalg RSA -keysize 4096 -validity 10000`
+2. Back the keystore and both passwords up in two separate places.
+3. Create `keystore.properties` in the repository root (git-ignored):
+   ```
+   storeFile=C:/keys/sentrack-upload.jks
+   storePassword=...
+   keyAlias=upload
+   keyPassword=...
+   ```
+   `app/build.gradle.kts` reads it. Without the file the release build is unsigned, so nothing breaks for anyone without the key.
+4. Enrol in **Play App Signing** when creating the app in Play Console (default). Google keeps the real signing key; your
+   upload key can be reset if lost.
+5. Build the bundle: `./gradlew :app:bundleRelease` -> `app/build/outputs/bundle/release/app-release.aab`.
+
+## Play Console setup (once)
+- [ ] Developer account (one-time fee). Personal accounts created recently must run a **closed test with at least 12 testers
+      for 14 days** before production access; plan for it. Internal testing has no such wait.
+- [ ] Create the app: name SenTrack, default language English (India), App, Free.
+- [ ] **Privacy policy URL**: publish `docs/site/privacy-policy.html` (for example GitHub Pages) and paste the address.
+- [ ] **Data safety** and **App content** answers: see `docs/14-store-listing.md`.
+- [ ] **Permissions declarations**: exact alarms (reminders the user sets), location (punch in/out, only when tapped).
+- [ ] Store listing text and graphics: see `docs/14-store-listing.md`.
+- [ ] Internal testing track: add testers by email, upload the 0.5.0 bundle, send them the opt-in link.
+
+## Before 1.0.0 (public)
+- [ ] Two weeks or more of real use on your own phone, and the closed-test period if required.
+- [ ] Replace the hand-written open-source list with generated notices; run a dependency vulnerability scan.
+- [ ] Have the privacy policy and terms reviewed; add the developer's legal name and contact.
+- [ ] Decide public or private distribution (private = keep it on internal/closed testing).
+- [ ] Re-run the full release-build test; confirm a backup from 0.5.0 restores on 1.0.0.

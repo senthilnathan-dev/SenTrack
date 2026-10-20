@@ -172,6 +172,11 @@ fun SecuritySettingsScreen(
 ) {
     var showAbout by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
     var showAi by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+    var showManual by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+    if (showManual) {
+        AboutHost(onBack = { showManual = false }, start = `in`.senthilnathan_dev.sentrack.ui.about.AboutStart.MANUAL)
+        return
+    }
     if (showAi) {
         AiHost(onBack = { showAi = false })
         return
@@ -217,7 +222,8 @@ fun SecuritySettingsScreen(
 
         Section("More") {
             NavRow("AI assistant", "Optional, off by default, your own key", { showAi = true }, Icons.Filled.AutoAwesome)
-            NavRow("About SenTrack", "Version, privacy policy, terms, licenses", { showAbout = true }, Icons.Filled.Info)
+            NavRow("User guide", "How to use every part of SenTrack", { showManual = true }, Icons.Filled.Info)
+            NavRow("About SenTrack", "Version, what's new, privacy policy, terms, licenses", { showAbout = true }, Icons.Filled.Info)
         }
     }
 }
