@@ -186,6 +186,7 @@ private fun repeatOf(spec: ScheduleSpec) = when (spec) {
     is ScheduleSpec.Weekly -> Repeat.WEEKLY
     is ScheduleSpec.Monthly -> Repeat.MONTHLY
     is ScheduleSpec.Yearly -> Repeat.CUSTOM   // not offered for backups; shown with the advanced option
+    is ScheduleSpec.MonthlyClamped -> Repeat.CUSTOM   // reminders only; backups offer days 1 to 28
     is ScheduleSpec.Custom -> Repeat.CUSTOM
 }
 

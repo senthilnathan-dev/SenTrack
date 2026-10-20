@@ -90,6 +90,7 @@ internal fun ReminderEditor(
                 is ScheduleSpec.Daily -> RepeatMode.DAILY
                 is ScheduleSpec.Weekly -> RepeatMode.WEEKLY
                 is ScheduleSpec.Monthly -> RepeatMode.MONTHLY
+                is ScheduleSpec.MonthlyClamped -> RepeatMode.MONTHLY
                 is ScheduleSpec.Yearly -> RepeatMode.YEARLY
                 else -> RepeatMode.KEEP
             },
@@ -111,7 +112,8 @@ internal fun ReminderEditor(
         RepeatMode.NONE -> null
         RepeatMode.DAILY -> ScheduleSpec.Daily(time)
         RepeatMode.WEEKLY -> ScheduleSpec.Weekly(weekdays.map { DayOfWeek.of(it) }.toSet(), time)
-        RepeatMode.MONTHLY -> ScheduleSpec.Monthly(localDate.dayOfMonth.coerceAtMost(28), time)
+        // From the 29th on, "monthly" means the same day, or the last day in shorter months.
+        RepeatMode.MONTHLY -> if (localDate.dayOfMonth <= 28) ScheduleSpec.Monthly(localDate.dayOfMonth, time) else ScheduleSpec.MonthlyClamped(localDate.dayOfMonth, time)
         RepeatMode.YEARLY -> ScheduleSpec.Yearly(localDate.monthValue, localDate.dayOfMonth, time)
         RepeatMode.KEEP -> existingSpec
     }
@@ -182,7 +184,7 @@ internal fun ReminderEditor(
                     label = if (m == RepeatMode.KEEP) "Keep: ${existingSpec?.describe()}" else m.label,
                     selected = mode == m,
                     subtitle = when (m) {
-                        RepeatMode.MONTHLY -> if (localDate.dayOfMonth > 28) "Runs on the 28th, because not every month has a ${localDate.dayOfMonth}th." else null
+                        RepeatMode.MONTHLY -> if (localDate.dayOfMonth > 28) "In a month with fewer than ${localDate.dayOfMonth} days it runs on that month's last day." else null
                         RepeatMode.YEARLY -> "On ${localDate.dayOfMonth} ${localDate.month.getDisplayName(TextStyle.FULL, Locale.ENGLISH)}"
                         else -> null
                     },
