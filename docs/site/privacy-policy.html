@@ -35,6 +35,16 @@ footer{margin-top:3rem;font-size:.85rem;color:#57606a}@media(prefers-color-schem
 <h2>How it is protected</h2>
 <p>Data is kept in an encrypted database, and attached files in an encrypted file vault. Both are opened by a key that only your passphrase (or your fingerprint or face, if you turn that on) can unlock. SenTrack locks itself when the screen turns off or after the time you choose, and hides its contents from screenshots, screen recording and the recent-apps view. SenTrack cannot read your data without your passphrase, and neither can the developer. If you lose both your passphrase and your recovery code, your data cannot be recovered.
 </p>
+<h2>What is kept outside the encrypted database</h2>
+<p>A few things are stored in SenTrack's private app storage instead, which Android keeps out of reach of other apps but which is not encrypted by SenTrack:
+</p>
+<ul>
+<li>Reminder times, so alarms can ring while the app is locked. Reminder titles are included only if you turn on "Show reminder text in notifications" (off by default).</li>
+<li>Settings: your auto-lock time, your backup schedule and options, the Google account email you chose for backup, and which version's release notes you last saw.</li>
+<li>The on-device AI model file, if you downloaded one. It is a public model, not your data.</li>
+</ul>
+<p>Someone with full access to the phone's internal storage (for example a rooted phone) could read these, but not your records, notes or attachments.
+</p>
 <h2>What can leave your phone, only if you choose it</h2>
 <p>1. Google Drive backup (optional). When you switch it on, SenTrack uploads an already-encrypted backup file to a private, hidden area of your own Google Drive that only SenTrack can open. Google receives that encrypted file and your Google account details under Google's own terms and privacy policy.
  2. AI assistant, cloud provider (optional, off by default). If you turn the assistant on and add your own API key for Google Gemini, OpenAI or Anthropic Claude, then when you ask for help the text you chose is sent to that provider under their terms. SenTrack shows you exactly what will be sent and waits for you to confirm. Nothing is sent in the background and none of your records are shared automatically. Your key is stored encrypted on your phone and is included in your encrypted backups.
@@ -52,7 +62,7 @@ footer{margin-top:3rem;font-size:.85rem;color:#57606a}@media(prefers-color-schem
 <p>SenTrack does not read your SMS, contacts, call history or photos. It only reads files you pick yourself.
 </p>
 <h2>Apps and websites in Workspace</h2>
-<p>SenTrack remembers the names and addresses you add, and how many times you opened each from SenTrack. It does not watch what you do inside those apps and sites.
+<p>When you choose an app to add, SenTrack reads the list of apps with a launcher icon on your phone, only to show you the picker. That list is not saved or sent anywhere. SenTrack remembers the names and addresses you add, and how many times you opened each from SenTrack. It does not watch what you do inside those apps and sites, and it does not see how you use them outside SenTrack.
 </p>
 <h2>Your control</h2>
 <p>You can export attachments, make and restore backups, archive items, or delete items, companies and the whole app's data. Uninstalling SenTrack removes its data from the phone. A Google Drive backup stays in your Drive until you remove it there. A downloaded AI model can be removed from the AI settings.

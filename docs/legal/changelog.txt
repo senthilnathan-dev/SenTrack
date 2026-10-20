@@ -7,6 +7,8 @@
 ## Changed
 - Privacy policy and terms rewritten to cover every feature (Work location, Career, AI, model download, clipboard).
 - Privacy policy, terms, user guide and release notes are now plain text files shared by the app and the published web pages, so they cannot drift apart.
+## Fixed
+- Repeating entries can now fall on any day of the month, including the 29th, 30th, 31st and "Last day of the month". In shorter months they use that month's last day, and the reminder follows the same rule.
 ## Security
 - Workspace links accept only web addresses (http and https).
 - Text copied from the AI assistant is marked as sensitive on the clipboard.

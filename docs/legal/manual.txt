@@ -8,6 +8,12 @@ The bar at the bottom switches between Finance, Personal, Work and Career. Insid
 ## Locking
 SenTrack locks when the screen turns off and after the time you set in Settings, Auto-lock. Turn on biometric unlock in Settings to use your fingerprint or face instead of typing the passphrase.
 
+## Changing your passphrase or recovery code
+In Settings you can change the passphrase (your data is not re-encrypted, so it is quick) and create a new recovery code. A new recovery code makes the old one stop working, so write the new one down straight away.
+
+## Entering your data
+You enter everything yourself. SenTrack does not read your SMS, bank apps or statements, and it does not import spreadsheets.
+
 ## Archiving and deleting
 Almost everything can be archived instead of deleted. Archived items are hidden but kept; look for the "Archived" button on a list. Permanent deletion asks you to type DELETE, so it cannot happen by accident.
 
@@ -22,7 +28,7 @@ Tap Add entry. Choose Expense, Income, Transfer, Invest or Withdraw. When you wi
 Shows your net worth, this month's income, spending and savings, where the money went, six-month cash flow, investment allocation, goals and financial-year totals. Net worth counts investments at the amount you put in; SenTrack does not follow live prices.
 
 ## Repeating entries
-In Finance, Plan, Repeating entries, add things that happen every month: salary, rent, a SIP, an EMI. When one comes due it appears as Due now on the Dashboard. Tap Add entry to record it or Skip to move on. Nothing changes your balances until you tap. Turn on the reminder to be told at 9 am on the day.
+In Finance, Plan, Repeating entries, add things that happen every month: salary, rent, a SIP, an EMI. When one comes due it appears as Due now on the Dashboard. Tap Add entry to record it or Skip to move on. Nothing changes your balances until you tap. Turn on the reminder to be told at 9 am on the day. Pick any day from the 1st to the 30th, or "Last day of the month". In a month that is too short, the entry falls on that month's last day, so a 30th becomes 28 or 29 February. You can pause a repeating entry or give it an end date.
 
 ## Budgets, goals and tax
 Set monthly budgets per category and savings goals linked to your accounts in the Plan tab. Tax years keep your filing details and documents (Form 16, proofs, acknowledgements), encrypted. SenTrack stores them; it does not read or file anything for you.
@@ -32,7 +38,7 @@ Set monthly budgets per category and savings goals linked to your accounts in th
 Write with simple formatting, add folders and tags, pin notes, and attach photos, PDFs and videos (encrypted). The editor has undo and redo, continues lists when you press Enter, and suggests words from your own notes. Tap the eye to switch between reading and editing.
 
 ## Habits
-Daily, weekly, monthly, quarterly or yearly habits, either done or not, or with a number such as glasses of water. See streaks, success rate and a calendar. Missed days can be filled in by stepping back a day.
+Daily, weekly, monthly, quarterly or yearly habits, either done or not, or with a number such as glasses of water. See streaks, success rate and a calendar. Missed days can be filled in by stepping back a day. Daily and weekly habits can have a reminder; for the others, add a reminder yourself from the bell.
 
 ## Plans
 Goals, plans, wishlist and bucket-list items with steps, priority, target date and cost. Progress follows the steps you tick. A reminder can ring on the target date.
@@ -51,7 +57,7 @@ Add the company you work for. Everything else in Work belongs to a company, so c
 Tap Punch in when you start and Punch out when you finish. If you allow location, the place is noted at that moment only. You can punch more than once a day.
 
 ## Leave
-Each company has its own leave year and leave types with yearly quotas. Add leave and SenTrack counts working days (Monday to Friday) and shows what is left and a month calendar.
+Each company has its own leave year and leave types with yearly quotas. Add leave and SenTrack counts working days (Monday to Friday) and shows what is left and a month calendar. Saturdays, Sundays and public holidays are not counted specially yet, and unused leave does not carry forward automatically, so check those against your company's policy.
 
 ## Tasks
 Add tasks with a due date and priority. Today at a glance shows what is open, due today and overdue.
@@ -67,11 +73,11 @@ Track courses, books and skills with progress. Record certifications with an exp
 Follow each application from wishlist to offer. Add interviews and get a reminder an hour before. Keep each version of your resume and pick the one you sent.
 
 ## Workspace
-List the apps and websites you use. Open them from SenTrack to keep a count of how often you use each. For each company there is a joining and a leaving checklist; the leaving one lets you archive that company's apps and sites in one go.
+List the apps and websites you use. Open them from SenTrack to keep a count of how often you use each. SenTrack only counts opens made from its own list; it cannot see how you use those apps otherwise. For each company there is a joining and a leaving checklist; the leaving one lets you archive that company's apps and sites in one go.
 
 # Reminders
 ## How reminders work
-Reminders ring even while SenTrack is locked, so the notification is generic ("SenTrack reminder") unless you choose to show the text. Open the bell to see, add and manage them. You can snooze or mark done from the notification.
+Reminders ring even while SenTrack is locked, so the notification is generic ("SenTrack reminder") unless you choose to show the text in the reminder settings. Open the bell to see, add and manage them: choose a date and time, how often it repeats, and whether it appears as a normal notification or rings like an alarm. You can snooze or mark done from the notification. Reminders created by other parts of SenTrack (habits, important dates, interviews, repeating entries) are in the same list.
 
 ## If a reminder did not ring
 Allow notifications and alarms for SenTrack in Android settings. On some phones, battery saving can stop alarms: set SenTrack's battery use to unrestricted. Do not rely on a reminder alone for anything critical.
@@ -92,6 +98,12 @@ Tap Set up on-device AI. SenTrack picks a model that suits your phone, downloads
 
 ## Using it
 Look for the sparkle button in notes, plans, achievements, work tasks, job applications, learning and finance. Pick what you want, then use, copy or discard the answer. Choose Fast, Normal or Accurate: Fast is brief and quick, Accurate is most careful and checks its own answer, so it takes about twice as long.
+
+## Plan my day and explain this month
+In Work, Today at a glance has "Plan my day" built from your open tasks. In Finance, the sparkle on the Dashboard's month card explains the month in plain words using only your own figures. In Add entry, the sparkle suggests a category from your note.
+
+## Battery, memory and removing the model
+Running the on-device model uses battery and may warm the phone, and it is freed from memory a couple of minutes after you stop and whenever the app locks. To remove it, go to Settings, AI assistant, On-device model, and choose Remove the model.
 
 ## Check what it writes
 AI can be wrong. SenTrack warns when an answer contains numbers that were not in your text, or drops numbers that should stay. Always check amounts and dates.
