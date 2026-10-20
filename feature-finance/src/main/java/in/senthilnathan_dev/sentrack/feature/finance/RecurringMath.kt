@@ -15,7 +15,10 @@ internal object RecurringMath {
         return if (afterLast != null && afterLast.isAfter(start)) afterLast else start
     }
 
-    private fun withinEnd(r: RecurringEntity, d: LocalDate) = r.endEpochDay == null || !d.isAfter(LocalDate.ofEpochDay(r.endEpochDay))
+    private fun withinEnd(r: RecurringEntity, d: LocalDate): Boolean {
+        val end = r.endEpochDay ?: return true   // copied to a local: a property from another module cannot be smart-cast
+        return !d.isAfter(LocalDate.ofEpochDay(end))
+    }
 
     /**
      * Every due date not yet added or skipped, up to and including [today], oldest first. At most the latest 12, so a
