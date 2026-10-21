@@ -44,7 +44,7 @@ html_page() {   # html_page <input.txt> <output.html> <page title>
     }
     END {
       close_blocks()
-      print "<footer>SenTrack. Contact: libertariansenthil@gmail.com</footer>\n</main>\n</body>\n</html>"
+      print "<footer>SenTrack</footer>\n</main>\n</body>\n</html>"
     }
   ' "$1" > "$2"
 }

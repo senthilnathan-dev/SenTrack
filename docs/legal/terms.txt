@@ -27,4 +27,4 @@ SenTrack is provided as it is, without warranties of any kind. To the fullest ex
 These terms may be updated with new versions of the app. Continuing to use SenTrack after an update means you accept the updated terms.
 
 ## Contact
-libertariansenthil@gmail.com
+Use the contact address shown on SenTrack's Google Play listing, or open an issue on the project's GitHub page.

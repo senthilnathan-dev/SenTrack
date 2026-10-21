@@ -9,7 +9,7 @@ Text and answers to paste into Play Console. Check each answer against Play's wo
 | Short description (max 80) | `Private, encrypted tracker for your money, life, work and career.` |
 | Category | Productivity |
 | Tags | Productivity, Finance tracking, Notes, Habits, Planner |
-| Contact email | libertariansenthil@gmail.com |
+| Contact email | A dedicated address for the app (see the note below). Play shows it publicly on the listing, so do not use a personal address |
 | Privacy policy URL | the public address of `docs/site/privacy-policy.html` |
 | Price | Free, no ads, no in-app purchases |
 | Target audience | 18 and over (avoids the Families programme) |

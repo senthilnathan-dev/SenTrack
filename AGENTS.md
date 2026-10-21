@@ -43,6 +43,7 @@ tools/             make-legal-pages.sh, bump-version.sh, build-release.sh, creat
 ./gradlew :core-data:connectedDebugAndroidTest   # migration test (needs a phone/emulator)
 bash tools/make-legal-pages.sh                   # regenerate docs/site + CHANGELOG.md after editing docs/legal/*.txt
 bash tools/bump-version.sh X.Y.Z                 # version bump (name, code, changelog stub)
+bash tools/check-no-personal-info.sh             # fails on personal emails, serials, local paths in tracked files and commits
 ```
 If your environment cannot run Gradle (some sandboxes fail with "Unable to establish loopback connection"), do **not** claim the
 change builds or passes tests. Say it is unverified, and ask the human to build in Android Studio and paste errors.
@@ -62,7 +63,8 @@ change builds or passes tests. Say it is unverified, and ask the human to build 
    (newest first), run `bash tools/make-legal-pages.sh`, and commit the generated files.
 7. **Architecture**: feature modules depend on `core-*`, never on each other; screens use repositories not Room; no AI code in
    feature modules (use `LocalAiAssist` and `AiAssistButton`); build UI from `core-ui`.
-8. **Honest reporting.** Say what you ran and what you did not. A failing test is reported with its output, not hidden.
+8. **Never write personal contact details** (email, phone, home paths, device serials) into code, docs, commits or issues. Use no-reply addresses; run `bash tools/check-no-personal-info.sh`.
+9. **Honest reporting.** Say what you ran and what you did not. A failing test is reported with its output, not hidden.
 
 ## Conventions
 - Money: `Long` paise. Dates: epoch days. Timestamps: epoch ms. Ids: UUID strings.

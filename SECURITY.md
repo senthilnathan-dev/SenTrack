@@ -3,9 +3,8 @@
 SenTrack stores private financial, personal, work and career information, so security reports are taken seriously.
 
 ## Reporting a vulnerability
-**Do not open a public issue.** Report privately by either:
-- GitHub: *Security* tab, *Report a vulnerability* (private advisory), or
-- Email: **libertariansenthil@gmail.com** with the subject `SenTrack security`.
+**Do not open a public issue.** Report privately through GitHub:
+- *Security* tab, then *Report a vulnerability* (a private advisory only the maintainer can see).
 
 Please include: what you found, the steps to reproduce, the app version (Settings, About), your Android version and device,
 and the impact you believe it has. Do not include real personal data.

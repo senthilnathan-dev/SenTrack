@@ -21,6 +21,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: No personal information in the repository
+        run: bash tools/check-no-personal-info.sh
+
       - name: Legal pages and changelog are up to date
         run: |
           bash tools/make-legal-pages.sh

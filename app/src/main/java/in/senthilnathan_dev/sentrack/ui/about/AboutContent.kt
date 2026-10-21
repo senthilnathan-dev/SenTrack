@@ -6,7 +6,8 @@ package `in`.senthilnathan_dev.sentrack.ui.about
  * sent, update docs/legal/privacy.txt in the same commit and run tools/make-legal-pages.sh.
  */
 internal object AboutContent {
-    const val CONTACT = "libertariansenthil@gmail.com"
+    /** Where users can reach the developer. No personal address is published in the app or the repository. */
+    const val CONTACT_NOTE = "Use the contact address shown on SenTrack's Google Play listing, or open an issue on the project's GitHub page."
 
     /** A third-party component and the licence it comes under. */
     data class Library(val name: String, val by: String, val license: String)

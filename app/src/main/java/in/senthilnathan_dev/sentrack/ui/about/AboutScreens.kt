@@ -83,7 +83,7 @@ fun AboutHost(onBack: () -> Unit, start: AboutStart = AboutStart.MAIN) {
                 NavRow("Open-source licenses", "Software SenTrack is built on", { page = AboutPage.LICENSES }, Icons.Filled.Policy)
             }
             Section("Contact") {
-                Text(AboutContent.CONTACT, style = MaterialTheme.typography.bodyLarge)
+                Text(AboutContent.CONTACT_NOTE, style = MaterialTheme.typography.bodyLarge)
             }
         }
 

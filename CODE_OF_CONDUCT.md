@@ -20,7 +20,7 @@ This applies in the repository (issues, pull requests, discussions, reviews) and
 
 ## Enforcement
 The maintainer may edit or remove comments, close issues or pull requests, and block people who break these rules.
-To report a problem, email **libertariansenthil@gmail.com** with the link and a short description. Reports are handled privately.
+To report a problem, use GitHub's *Report content* feature on the comment or pull request, or open a private security advisory that describes the problem and link (Security tab, *Report a vulnerability*). Reports are handled privately.
 
 ## Attribution
 Written for this project, in the spirit of the Contributor Covenant (https://www.contributor-covenant.org).

@@ -24,8 +24,10 @@ You do **not** need: a signing key (debug builds are signed automatically), any 
 git clone <repository-url> SenTrack
 cd SenTrack
 git config user.name  "Your Name"          # repo-local identity, so commits are attributed correctly
-git config user.email "you@example.com"
+git config user.email "<id>+<username>@users.noreply.github.com"   # your GitHub no-reply address, never a personal or work email
 ```
+A global `user.email` (for example a work address) silently applies to every repository that has no local setting, so always set the local one and check it with `git config user.email`. See "Your own privacy" in CONTRIBUTING.md.
+
 Line endings are normalised by `.gitattributes` (LF in the repository on every system), so no extra Git setting is needed.
 
 1. Android Studio, *Open*, choose the `SenTrack` folder. Let Gradle sync (first sync takes several minutes).
