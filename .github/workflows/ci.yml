@@ -35,7 +35,7 @@ jobs:
           distribution: temurin
           java-version: 25
 
-      - uses: android-actions/setup-android@v3
+      - uses: android-actions/setup-android@v4
       - name: Install the Android platform the build targets
         run: |
           yes | sdkmanager --licenses > /dev/null || true
