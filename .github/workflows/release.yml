@@ -72,7 +72,7 @@ jobs:
           [ -s release-notes.md ] || echo "See CHANGELOG.md" > release-notes.md
 
       - name: Draft the GitHub release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           draft: true
           prerelease: ${{ startsWith(steps.version.outputs.version, '0.') }}
