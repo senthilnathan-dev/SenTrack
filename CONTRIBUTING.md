@@ -91,11 +91,11 @@ vulnerabilities), `good first issue`, `help wanted`, `needs-info`, `blocked`, an
 Open a discussion or an issue with the `question` label. For anything about how the pieces fit, start with
 [docs/README.md](docs/README.md).
 
-## Your own privacy
+## Your own privacy (recommended for contributors)
 Commits are public and permanent. Use a **GitHub no-reply address** for commits, not a personal or work email:
 1. GitHub, Settings, Emails: tick *Keep my email addresses private* and *Block command line pushes that expose my email*.
 2. Copy your no-reply address (it looks like `<id>+<username>@users.noreply.github.com`) and set it for this repository:
    `git config user.email "<id>+<username>@users.noreply.github.com"`.
 3. Check what Git will use: `git config user.name && git config user.email` (a global setting can silently apply to a fresh clone).
 `bash tools/check-no-personal-info.sh` (also run by CI) fails if a personal email, a device serial, local paths, or IDE or assistant
-settings are committed, or if recent commits carry a non-no-reply email.
+settings are committed in any file. Add `--commits` to also check commit author emails.
